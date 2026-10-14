@@ -160,8 +160,7 @@ def intent_id_of(message: str) -> str | None:
 def check_scope(root: Path, message: str, changed: list[str]) -> list[Error]:
     """INT006: every changed source file must be listed in the cited intent's Scope.
 
-    Files outside source_dirs-like areas that are always allowed: the intent files themselves,
-    docs, tests, and project metadata.
+    Always allowed: intent files, docs, tests, root-level metadata and empty package markers (`__init__.py`).
     """
     intent = intent_id_of(message)
     file = _dir(root) / f"{intent}.md"
@@ -171,6 +170,8 @@ def check_scope(root: Path, message: str, changed: list[str]) -> list[Error]:
     errors: list[Error] = []
     for path in changed:
         if path in scope or path.startswith((".aif/", "docs/", "tests/")) or "/" not in path:
+            continue
+        if path.endswith("/__init__.py") and not (root / path).read_text(encoding="utf-8").strip():
             continue
         errors.append(
             _error(

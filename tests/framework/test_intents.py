@@ -84,3 +84,11 @@ def test_int006_changed_file_outside_scope(project):
 def test_scope_skipped_without_valid_intent(project):
     assert intents.check_scope(project.root, "no trailer", ["adapters/a.py"]) == []
     assert intents.check_scope(project.root, "Intent: ghost", ["adapters/a.py"]) == []
+
+
+def test_scope_ignores_empty_init_but_not_code(project):
+    project.write(".aif/intents/x.md", VALID)
+    project.write("adapters/empty/__init__.py", "")
+    project.write("adapters/full/__init__.py", "X = 1\n")
+    errs = intents.check_scope(project.root, "Intent: x", ["adapters/empty/__init__.py", "adapters/full/__init__.py"])
+    assert [e["file"] for e in errs] == ["adapters/full/__init__.py"]
