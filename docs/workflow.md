@@ -23,7 +23,7 @@ Intent: money-transfer
 
 ## CI
 
-`.github/workflows/aif.yml` installs the package (`pip install -e ".[dev]"`), runs `aif check --json` (uploaded as the `aif-report` artifact) and the framework tests.
+`.github/workflows/aif.yml` installs the package (`pip install -e ".[dev]"`), runs `aif check --json` (uploaded as the `aif-report-<version>` artifact) and the framework tests on a matrix of Python 3.11, 3.12 and 3.13. The matrix matters: 3.11 is the declared minimum, and an `ast.TypeAlias` reference (3.12+ only) once passed locally on 3.12 but broke 105 tests in CI on 3.11. Keep the code importable on the minimum version.
 
 ## Tests
 

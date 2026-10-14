@@ -7,11 +7,15 @@ on:
 jobs:
   check:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12", "3.13"]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: ${{ matrix.python-version }}
           cache: pip
       - name: Install
         run: pip install -e ".[dev]"
@@ -23,5 +27,5 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: aif-report
+          name: aif-report-${{ matrix.python-version }}
           path: aif-report.json

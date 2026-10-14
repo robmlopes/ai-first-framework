@@ -11,6 +11,7 @@ from aif.config import Config
 from aif.index import module_of, resolve_from, source_files
 
 Error = dict[str, Any]
+_TYPE_ALIAS: Any = getattr(ast, "TypeAlias", None)  # noqa: B009
 Graph = dict[str, list[tuple[str, int]]]
 
 
@@ -47,7 +48,7 @@ def _aliases(tree: ast.Module) -> dict[str, str]:
             ref = _dotted(n.value)
             if ref:
                 out[n.target.id] = ref
-        elif isinstance(n, ast.TypeAlias):
+        elif _TYPE_ALIAS is not None and isinstance(n, _TYPE_ALIAS):  # `type X = Y` exists from Python 3.12
             ref = _dotted(n.value)
             if ref and isinstance(n.name, ast.Name):
                 out[n.name.id] = ref

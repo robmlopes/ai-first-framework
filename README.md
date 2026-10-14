@@ -72,4 +72,4 @@ Full documentation is in [docs/](docs/README.md): architecture, project structur
 
 ## Honest limits
 
-AIF raises the cost of mistakes; it does not prove correctness. Contracts are sampled, not proved; analysis skips what it cannot infer rather than guessing; the CI workflow has not run on a remote yet. See [docs/limitations.md](docs/limitations.md).
+AIF raises the cost of mistakes; it does not prove correctness. Contracts are sampled, not proved; analysis skips what it cannot infer rather than guessing. See [docs/limitations.md](docs/limitations.md).
