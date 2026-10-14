@@ -6,9 +6,10 @@ import ast
 from pathlib import Path
 from typing import Any
 
-from aif import effects
+from aif import effects, members
 from aif.config import Config
-from aif.index import class_attributes, generate, resolve_from, source_files
+from aif.index import generate, module_of, resolve_from, source_files
+from aif.model import Model
 
 Error = dict[str, Any]
 
@@ -111,50 +112,7 @@ def _check_import(
     return errors + _check_project_import(node, rel, importer, is_pkg, cfg, index)
 
 
-def _known_classes(tree: ast.Module, index: dict[str, Any], cfg: Config) -> dict[str, dict[str, Any]]:
-    """Map local names bound to project classes (defined here or imported) to their index entries."""
-    classes: dict[str, dict[str, Any]] = {}
-    for node in tree.body:
-        if isinstance(node, ast.ImportFrom) and node.module in index and node.level == 0:
-            for a in node.names:
-                entry = index[node.module].get(a.name)
-                if entry and entry["kind"] == "class":
-                    classes[a.asname or a.name] = entry
-        elif isinstance(node, ast.ClassDef):
-            classes[node.name] = {"methods": {m: {} for m in _method_names(node)}, "attributes": class_attributes(node)}
-    return classes
-
-
-def _method_names(node: ast.ClassDef) -> list[str]:
-    return [m.name for m in node.body if isinstance(m, (ast.FunctionDef, ast.AsyncFunctionDef))]
-
-
-def _check_members(tree: ast.Module, rel: str, index: dict[str, Any], cfg: Config) -> list[Error]:
-    """AIF012: `Class.member` must name an existing method or class attribute."""
-    classes = _known_classes(tree, index, cfg)
-    shadowed = {n.id for n in ast.walk(tree) if isinstance(n, ast.Name) and isinstance(n.ctx, ast.Store)}
-    errors: list[Error] = []
-    for node in ast.walk(tree):
-        if not (isinstance(node, ast.Attribute) and isinstance(node.value, ast.Name)):
-            continue
-        entry = classes.get(node.value.id)
-        if entry is None or node.value.id in shadowed or node.attr.startswith("__"):
-            continue
-        members = {*entry["methods"], *entry["attributes"]}
-        if node.attr not in members:
-            errors.append(
-                _error(
-                    "AIF012",
-                    rel,
-                    node.lineno,
-                    f"unknown member: {node.value.id}.{node.attr}",
-                    f"available members: {sorted(members)}",
-                )
-            )
-    return errors
-
-
-def _check_file(root: Path, file: Path, cfg: Config, index: dict[str, Any]) -> list[Error]:
+def _check_file(root: Path, file: Path, cfg: Config, index: dict[str, Any], model: Model) -> list[Error]:
     rel = file.relative_to(root).as_posix()
     text = file.read_text(encoding="utf-8")
     tree = ast.parse(text)
@@ -163,7 +121,7 @@ def _check_file(root: Path, file: Path, cfg: Config, index: dict[str, Any]) -> l
     n = len(text.splitlines())
     if n > cfg.max_file_lines:
         errors.append(_error("AIF005", rel, 1, f"file has {n} lines (max {cfg.max_file_lines})", "split the module"))
-    errors += _check_members(tree, rel, index, cfg)
+    errors += members.check_module(model, module_of(root, file), rel, tree)
     top = {id(f) for f in tree.body}
     for node in ast.walk(tree):
         if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
@@ -180,7 +138,8 @@ def _check_file(root: Path, file: Path, cfg: Config, index: dict[str, Any]) -> l
 
 def run(root: Path, cfg: Config) -> list[Error]:
     index = generate(root, cfg)
+    model = Model(root, cfg)
     errors: list[Error] = []
     for file in source_files(root, cfg):
-        errors += _check_file(root, file, cfg, index)
+        errors += _check_file(root, file, cfg, index, model)
     return errors + effects.run(root, cfg)

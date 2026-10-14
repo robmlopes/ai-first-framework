@@ -24,6 +24,9 @@ project/
 │   ├── intents.py            # intent parsing, validation, `aif intent`
 │   ├── style.py              # ruff stage and `aif fix`
 │   ├── types.py              # mypy stage (structured type errors)
+│   ├── dynamic.py            # AIF010 references and AIF013 dynamic dispatch
+│   ├── model.py              # project model: classes, imports, type resolution
+│   ├── members.py            # AIF012 member checks (classes and instances)
 │   ├── effects.py            # rules AIF008-AIF011
 │   └── patch.py              # `aif patch`: replace one function/class with rollback
 ├── domain/                   # pure logic
@@ -50,6 +53,9 @@ project/
 | `aif.contract` | `contract`, `ContractViolation` | Runtime contract checking; disabled with `AIF_CONTRACTS=off` |
 | `aif.index` | `generate`, `save`, `source_files`, `module_of` | Builds the symbol map from the AST |
 | `aif.lint` | `run` | Per-file rules, then delegates to `effects.run` |
+| `aif.model` | `Model` | Project-wide class/function model with import and type resolution |
+| `aif.members` | `check_module` | AIF012 for classes and inferred instances |
+| `aif.dynamic` | `banned_references`, `dynamic_calls` | AIF010 references and AIF013 |
 | `aif.effects` | `run` | Capability/effect matching, direct I/O calls, import graph |
 | `aif.config` | `Config`, `load` | Reads `[aif]` from `aif.toml` |
 | `aif.agents` | `render`, `stale`, `write` | Generates agent instruction files from `.aif/protocol.md` |
@@ -72,9 +78,9 @@ project/
       "doc": "Move `amount` from source to target ...",
       "line": 27
     },
-    "Account": {"kind": "class", "line": 9, "doc": "", "methods": {}}
+    "Account": {"kind": "class", "line": 9, "doc": "", "bases": [], "methods": {}, "attributes": ["id", "balance"], "instance_attributes": []}
   }
 }
 ```
 
-Top-level functions and classes are indexed. Each class lists its `methods` (`kind: "method"`, `self`/`cls` omitted from `args`) and its `attributes` (annotated fields, assignments, nested classes). The file is regenerated on every `aif check`; never edit it by hand.
+Top-level functions and classes are indexed. Each class lists its `methods` (`kind: "method"`, `self`/`cls` omitted from `args`) and its `attributes` (annotated fields, assignments, nested classes), `instance_attributes` (`self.x = ...`) and `bases`. The file is regenerated on every `aif check`; never edit it by hand.

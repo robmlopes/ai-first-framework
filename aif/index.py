@@ -38,9 +38,24 @@ def class_attributes(node: ast.ClassDef) -> list[str]:
         if isinstance(item, ast.AnnAssign) and isinstance(item.target, ast.Name):
             names.append(item.target.id)
         elif isinstance(item, ast.Assign):
-            names += [t.id for t in item.targets if isinstance(t, ast.Name)]
+            for t in item.targets:
+                names += [n.id for n in ast.walk(t) if isinstance(n, ast.Name)]
         elif isinstance(item, ast.ClassDef):
             names.append(item.name)
+    return names
+
+
+def instance_attributes(node: ast.ClassDef) -> list[str]:
+    """Names assigned as `self.<name>` inside methods."""
+    names: list[str] = []
+    for m in node.body:
+        if isinstance(m, (ast.FunctionDef, ast.AsyncFunctionDef)) and m.args.args:
+            owner = m.args.args[0].arg
+            for n in ast.walk(m):
+                if not (isinstance(n, ast.Attribute) and isinstance(n.ctx, ast.Store)):
+                    continue
+                if isinstance(n.value, ast.Name) and n.value.id == owner and n.attr not in names:
+                    names.append(n.attr)
     return names
 
 
@@ -52,8 +67,10 @@ def _class(node: ast.ClassDef) -> dict[str, Any]:
         "kind": "class",
         "line": node.lineno,
         "doc": (ast.get_docstring(node) or "").split("\n")[0],
+        "bases": [ast.unparse(b) for b in node.bases],
         "methods": methods,
         "attributes": class_attributes(node),
+        "instance_attributes": instance_attributes(node),
     }
 
 

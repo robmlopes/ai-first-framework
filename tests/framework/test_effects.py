@@ -89,7 +89,8 @@ def test_aif010_builtins_qualified(project: Project) -> None:
 
 
 def test_aif010_alias_of_builtin(project: Project) -> None:
-    assert _rules_for(project, "reader = open\n\n\ndef _f() -> None:\n    reader('x')\n") == ["AIF010"]
+    # the reference `open` and the call through the alias are both reported
+    assert _rules_for(project, "reader = open\n\n\ndef _f() -> None:\n    reader('x')\n") == ["AIF010", "AIF010"]
 
 
 def test_aif010_module_function_call(project: Project) -> None:
@@ -138,3 +139,47 @@ def test_capability_inside_union_generic_and_quotes(project: Project) -> None:
             f"@contract(effects=[])\ndef f(db: {ann}) -> None:\n    pass\n"
         )
         assert _rules_for(project, body) == ["AIF009"], ann
+
+
+def test_aif010_reference_passed_as_value(project: Project) -> None:
+    body = "import os\n\n\ndef _f(xs: list[str]) -> list[str]:\n    return list(map(os.path.abspath, xs))\n"
+    assert _rules_for(project, body) == ["AIF010"]
+    assert _rules_for(project, "def _f() -> object:\n    return open\n") == ["AIF010"]
+
+
+def test_aif010_reference_not_double_counted_with_call(project: Project) -> None:
+    assert _rules_for(project, "import os\n\n\ndef _f() -> str:\n    return os.getcwd()\n") == ["AIF010"]
+
+
+def test_aif010_plain_attribute_access_ok(project: Project) -> None:
+    body = (
+        "from dataclasses import dataclass\n\n\n@dataclass\nclass _P:\n    open: int = 1\n\n\n"
+        "def _f(p: _P) -> int:\n    return p.open\n"
+    )
+    assert _rules_for(project, body) == []
+
+
+def test_aif013_call_through_runtime_bound_name(project: Project) -> None:
+    body = "def _pick() -> object: ...\n\n\ndef _f() -> None:\n    fn = _pick()\n    fn()\n"
+    assert _rules_for(project, body) == ["AIF013"]
+
+
+def test_aif013_subscript_call_result_and_loop_variable(project: Project) -> None:
+    assert _rules_for(project, "def _f(t: dict[str, object]) -> None:\n    t['k']()\n") == ["AIF013"]
+    assert _rules_for(project, "def _g() -> object: ...\n\n\ndef _f() -> None:\n    _g()()\n") == ["AIF013"]
+    assert _rules_for(project, "def _f(fs: list[object]) -> None:\n    for f in fs:\n        f()\n") == ["AIF013"]
+
+
+def test_aif013_static_calls_ok(project: Project) -> None:
+    body = "def _a() -> int:\n    return 1\n\n\ndef _f() -> int:\n    g = _a\n    return g() + _a()\n"
+    assert _rules_for(project, body) == []
+
+
+def test_aif013_nested_function_scope_isolated(project: Project) -> None:
+    body = "def _f(x: int) -> int:\n    def helper(v: int) -> int:\n        return v\n\n    return helper(x)\n"
+    assert _rules_for(project, body) == []
+
+
+def test_aif013_not_enforced_outside_domain(project: Project) -> None:
+    project.write("adapters/a.py", "def f(t: dict[str, object]) -> None:\n    t['k']()\n")
+    assert run(project) == []

@@ -6,6 +6,7 @@ import ast
 from pathlib import Path
 from typing import Any
 
+from aif import dynamic
 from aif.config import Config
 from aif.index import module_of, resolve_from, source_files
 
@@ -135,20 +136,16 @@ def _check_function(
 
 
 def _direct_calls(tree: ast.Module, rel: str, cfg: Config) -> list[Error]:
-    """AIF010: calls that perform effects, seen through import aliases and `builtins.`."""
+    """AIF010/AIF013 for pure modules: calls, references and dynamic dispatch of effects."""
     aliases = _aliases(tree)
     errors: list[Error] = []
     for n in ast.walk(tree):
-        if not isinstance(n, ast.Call):
-            continue
-        full = _resolve(_dotted(n.func), aliases)
-        short = full.removeprefix("builtins.")
-        root_name = short.split(".")[0]
-        banned_builtin = short in cfg.forbidden_calls or (full != short and root_name in cfg.forbidden_calls)
-        banned_module_call = "." in full and full.split(".")[0] in cfg.forbidden_imports
-        if banned_builtin or banned_module_call:
-            errors.append(_error("AIF010", rel, n.lineno, f"direct effect call: {full}()", "use an injected port"))
-    return errors
+        if isinstance(n, ast.Call):
+            full = _resolve(_dotted(n.func), aliases)
+            if full and dynamic.is_banned(full, cfg):
+                errors.append(_error("AIF010", rel, n.lineno, f"direct effect call: {full}()", "use an injected port"))
+    errors += dynamic.banned_references(tree, rel, cfg, _resolve, _dotted, aliases)
+    return errors + dynamic.dynamic_calls(tree, rel)
 
 
 def _imported_modules(tree: ast.AST, importer: str, is_pkg: bool) -> list[tuple[str, int]]:
