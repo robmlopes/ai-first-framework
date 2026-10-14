@@ -14,10 +14,11 @@ from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import Any
 
-from aif import agents, fuzz, history, index, intents, limits, lint, style, types
+from aif import agents, docscheck, fuzz, history, index, intents, limits, lint, style, types
 from aif.config import Config, load
 
 Error = dict[str, Any]
+COMMANDS = ["check", "index", "patch", "fix", "intent", "agents", "fuzz", "init", "status", "stats", "docs"]
 _CONTRACT = re.compile(r"AIF_CONTRACT (\{.*\})")
 
 
@@ -103,6 +104,7 @@ def _light(root: Path, cfg: Config, only: frozenset[str] | None, timings: dict[s
         ("style", lambda: style.run(root, cfg, only)),
         ("agents", lambda: agent_files(root)),
         ("intents", lambda: intents.run(root, cfg)),
+        ("docs", lambda: docscheck.run(root, COMMANDS) if cfg.docs_check else []),
         ("lint", lambda: lint.run(root, cfg, only)),
     ):
         errors = _timed(name, fn, timings)

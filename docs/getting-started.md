@@ -38,7 +38,7 @@ aif check --json                     # expected: {"ok": true, "errors": []}
 | `.aif/intents/bootstrap.md` | the first intent |
 | `scripts/` + `.git/hooks/` | `pre-commit` and `commit-msg` hooks (installed automatically unless `--no-git`) |
 
-Options: `aif init DIR --no-git` skips `git init` and the hooks. The command never overwrites existing files and refuses a directory that already has an `aif.toml`.
+Options: `aif init DIR --no-git` skips `git init` and the hooks; `--profile web-api` (FastAPI) or `--profile cli` also creates an entry layer with a composition root and a starter test. The command never overwrites existing files and refuses a directory that already has an `aif.toml`.
 
 ## 3. Make the first commit
 

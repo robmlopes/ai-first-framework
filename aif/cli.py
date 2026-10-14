@@ -10,7 +10,7 @@ import time
 from pathlib import Path
 from typing import Any
 
-from aif import agents, fuzz, history, index, intents, patch, pipeline, scaffold, style
+from aif import agents, docscheck, fuzz, history, index, intents, patch, pipeline, scaffold, style
 from aif.config import load
 
 check = pipeline.check
@@ -55,7 +55,8 @@ def _background(root: Path, changed: bool) -> int:
 def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(prog="aif")
     p.add_argument(
-        "command", choices=["check", "index", "patch", "fix", "intent", "agents", "fuzz", "init", "status", "stats"]
+        "command",
+        choices=["check", "index", "patch", "fix", "intent", "agents", "fuzz", "init", "status", "stats", "docs"],
     )
     p.add_argument("file", nargs="?", help="patch: target file, e.g. domain/transfer.py; init: target directory")
     p.add_argument("symbol", nargs="?", help="patch: top-level function or class to replace")
@@ -65,23 +66,33 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--keep", action="store_true", help="patch: keep the change even if lint fails")
     p.add_argument("--no-git", action="store_true", help="init: do not run git init or install hooks")
     p.add_argument("--changed", action="store_true", help="check: style and lint only files changed since HEAD")
+    p.add_argument("--profile", help="init: add an entry layer and starter files (web-api, cli)")
+    p.add_argument("--report", action="store_true", help="fuzz: list what was tested and what was skipped, and why")
     p.add_argument("--background", action="store_true", help="check: start detached, poll with `aif status`")
     p.add_argument("--json", action="store_true")
     p.add_argument("--root", default=".")
     a = p.parse_args(argv)
     root = Path(a.root).resolve()
     if a.command == "init":
-        out = scaffold.init(Path(a.file or a.root).resolve(), git=not a.no_git)
+        out = scaffold.init(Path(a.file or a.root).resolve(), git=not a.no_git, profile=a.profile)
         print(json.dumps(out, indent=2, ensure_ascii=False))
         return 0 if out["ok"] else 1
     if a.command == "status":
         out = history.read_last(root)
         print(json.dumps(out, indent=2, ensure_ascii=False, default=repr))
         return 0 if out.get("status") == "done" and out.get("ok") else (3 if out.get("status") == "running" else 1)
+    if a.command == "docs":
+        errs = docscheck.run(root, pipeline.COMMANDS)
+        print(json.dumps({"ok": not errs, "errors": errs}, indent=2, ensure_ascii=False))
+        return 0 if not errs else 1
     if a.command == "stats":
         print(json.dumps(history.stats(root), indent=2, ensure_ascii=False))
         return 0
     if a.command == "fuzz":
+        if a.report:
+            full = fuzz.report(root, load(root))
+            print(json.dumps(full, indent=2, ensure_ascii=False, default=repr))
+            return 0 if full["ok"] else 1
         errors = fuzz.run(root, load(root))
         print(json.dumps({"ok": not errors, "errors": errors}, indent=2, ensure_ascii=False, default=repr))
         return 0 if not errors else 1

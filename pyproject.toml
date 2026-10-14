@@ -16,7 +16,7 @@ aif = "aif.cli:main"
 include = ["aif*"]
 
 [tool.setuptools.package-data]
-aif = ["templates/*", "py.typed"]
+aif = ["templates/*", "templates/profiles/*", "py.typed"]
 
 [project.optional-dependencies]
 dev = ["pytest", "hypothesis", "mypy", "ruff"]

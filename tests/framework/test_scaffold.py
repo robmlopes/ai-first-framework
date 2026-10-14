@@ -95,3 +95,16 @@ def test_new_project_has_clock_port_and_rejects_clock_reads(tmp_path: Path) -> N
     )
     errors = cli.check(tmp_path)["errors"]
     assert errors and errors[0]["rule"] == "AIF010"
+
+
+def test_every_template_folder_is_declared_as_package_data() -> None:
+    import tomllib
+
+    root = Path(__file__).resolve().parents[2]
+    declared = set(tomllib.loads((root / "pyproject.toml").read_text())["tool"]["setuptools"]["package-data"]["aif"])
+    files = [f for f in (root / "aif" / "templates").rglob("*") if f.is_file()]
+    tracked = [f for f in files if not any(part.startswith(".") or part == "__pycache__" for part in f.parts)]
+    folders = {f.parent.relative_to(root / "aif").as_posix() for f in tracked}
+    assert folders, "no templates found"
+    for folder in folders:
+        assert f"{folder}/*" in declared, f"{folder}/ is not packaged: add '{folder}/*' to package-data"

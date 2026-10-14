@@ -50,6 +50,19 @@ def _hint(node: Function, lines: list[str], skip: set[int], cfg: Config) -> str:
     return f"extract a helper; largest blocks: {found}"
 
 
+def _file_hint(tree: ast.Module, lines: list[str], skip: set[int], cfg: Config) -> str:
+    """Name the biggest top-level definitions and say where to cut: a module per cohesive group of them."""
+    parts: list[tuple[int, str]] = []
+    for node in tree.body:
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+            size = _size(lines, node.lineno, node.end_lineno or node.lineno, skip, cfg)
+            parts.append((size, f"{node.name} ({size} lines, line {node.lineno})"))
+    if len(parts) < 2:
+        return "split the module"
+    biggest = ", ".join(label for _, label in sorted(parts, reverse=True)[:3])
+    return f"move cohesive definitions to a new module; biggest: {biggest}"
+
+
 def _entry(rule: str, file: str, line: int, cause: str, suggestion: str, warning: bool) -> Error:
     err: Error = {"stage": "lint", "rule": rule, "file": file, "line": line, "cause": cause, "suggestion": suggestion}
     if warning:
@@ -79,7 +92,8 @@ def check_file(tree: ast.Module, text: str, rel: str, cfg: Config) -> tuple[list
 
     flimit = cfg.limit(rel, "max_file_lines")
     fsize = _size(lines, 1, max(len(lines), 1), skip, cfg) if lines else 0
-    report(_judge("file", fsize, flimit, cfg), 1, "file", fsize, flimit, "split the module")
+    fkind = _judge("file", fsize, flimit, cfg)
+    report(fkind, 1, "file", fsize, flimit, _file_hint(tree, lines, skip, cfg) if fkind else "")
     limit = cfg.limit(rel, "max_function_lines")
     for node in ast.walk(tree):
         if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):

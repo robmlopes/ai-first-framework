@@ -36,6 +36,8 @@ project/
 │   ├── pipeline.py           # the `aif check` stages: changed-only mode, parallel heavy stages, timings
 │   ├── cache.py              # fuzz result cache keyed by module and its imports
 │   ├── history.py            # .aif/history.jsonl, last-check.json, `aif stats`
+│   ├── docscheck.py          # `aif docs`: docs agree with code (DOC001-DOC004)
+│   ├── fuzzreport.py         # `aif fuzz --report`: tested vs skipped contracts
 │   ├── effects.py            # rules AIF008-AIF011
 │   └── patch.py              # `aif patch`: replace one function/class with rollback
 ├── domain/                   # pure logic

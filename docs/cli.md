@@ -13,6 +13,7 @@ aif <command> [--json] [--root PATH]      # same as: python -m aif ...
 | `fix` | Applies canonical formatting and safe autofixes (ruff), returns what remains |
 | `check` | Index -> style (ruff) -> agent files -> intents -> lint/effects -> types (mypy) / fuzz / tests (run concurrently). Exit code 0 when ok, 1 otherwise. Options: `--changed`, `--background` |
 | `status` | Prints `.aif/last-check.json`; exit 0 when the last check passed, 3 while one is running, 1 otherwise |
+| `docs` | Checks that `docs/` agrees with the code: rules, config options, CLI commands, links (DOC001-DOC004) |
 | `stats` | Summarises `.aif/history.jsonl`: runs, attempts before ok, rules that fire most, time per stage |
 
 `--root` defaults to the current directory.
@@ -156,13 +157,47 @@ Intents live in `.aif/intents/<id>.md` (kebab-case id). Required format:
 
 Intent errors use `"stage": "intents"`. `aif check` validates all intents (INT001-INT003); INT004-INT006 apply to commit messages via `scripts/commit-msg`, which you install as a git `commit-msg` hook.
 
+## `aif docs`
+
+Verifies the documentation by machine, so "are the docs up to date?" has a checkable answer. It also runs as a stage of `aif check` (`docs_check = false` disables it). Silent for projects without a `docs/` directory.
+
+| Rule | Fails when |
+|---|---|
+| DOC001 | a rule id the code can emit appears nowhere in `docs/`, or a documented id is never emitted |
+| DOC002 | a `Config` option is missing from `docs/configuration.md` |
+| DOC003 | a CLI command is missing from `docs/cli.md` |
+| DOC004 | a relative Markdown link in `README.md` or `docs/*.md` points to a missing file or heading |
+
 ## `aif init [DIR]`
 
-Creates a new AIF project in `DIR` (default `--root`): `aif.toml`, `pyproject.toml`, `.gitignore`, `.aif/protocol.md`, a `bootstrap` intent, empty `domain/ ports/ adapters/ tests/` packages, `tests/strategies.py`, the hook scripts and the generated agent files. It runs `git init` and installs the hooks unless `--no-git` is given, never overwrites existing files, and refuses a directory that already has an `aif.toml`. The result passes `aif check` immediately. Templates live in `aif/templates/`.
+Creates a new AIF project in `DIR` (default `--root`; `--profile web-api` or `--profile cli` adds an entry layer, see below): `aif.toml`, `pyproject.toml`, `.gitignore`, `.aif/protocol.md`, a `bootstrap` intent, empty `domain/ ports/ adapters/ tests/` packages, `tests/strategies.py`, the hook scripts and the generated agent files. It runs `git init` and installs the hooks unless `--no-git` is given, never overwrites existing files, and refuses a directory that already has an `aif.toml`. The result passes `aif check` immediately. Templates live in `aif/templates/`.
+
+### Profiles
+
+| Profile | Adds |
+|---|---|
+| `web-api` | `web/` entry layer with a FastAPI `create_app()` composition root and a `/health` test; `fastapi` in `third_party`; `fastapi` and `httpx` in the `dev` extra; `[aif.limits.web] max_function_lines = 60` |
+| `cli` | `cli/` entry layer with an argparse `main()` composition root and a test; `[aif.limits.cli] max_function_lines = 60` |
+
+Both profiles set `entry_dirs` and `composition_roots`, so adapters are wired only in `main.py` (AIF016), and both add the new files to the bootstrap intent's scope. The project passes `aif check` and the first commit straight away.
 
 ## `aif fuzz`
 
 Runs only the contract-fuzzing stage and prints `{"ok", "errors"}` (see `contracts.md`, rules CON001-CON005). Useful while iterating on a contract, because the full pipeline takes longer.
+
+`aif fuzz --report` ignores the cache and prints what was covered:
+
+```json
+{
+  "ok": true,
+  "tested": [{"module": "domain.pricing", "function": "discounted", "status": "passed", "examples": 100,
+              "bounds_from_requires": {"price": [0, null], "percent": [0, 100]}, "custom_strategies": []}],
+  "skipped": [{"module": "domain.store", "function": "store", "reason": "declares effects: needs real ports, covered by integration tests"}],
+  "summary": {"functions_fuzzed": 1, "examples_run": 100, "failed": 0, "skipped": 1, "skipped_by_reason": {"...": 1}}
+}
+```
+
+`status` is `passed`, `failed` or `not-generated` (CON003). Skip reasons: no `@contract`, no `ensures`, declared effects. Private helpers (`_name`) without a contract are not listed. Fuzzing checks properties of pure functions on sampled inputs; it does not test concurrency or integration with real ports.
 
 ## `aif agents`
 

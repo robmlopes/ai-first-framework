@@ -17,6 +17,7 @@ All keys live under `[aif]`. Unknown keys are ignored; missing keys use defaults
 | `composition_roots` | `[]` | Modules in `entry_dirs` allowed to import adapters (e.g. `["web.main"]`) |
 | `forbidden_clock` | `datetime.datetime.now`, `time.time`, `time.sleep`, ... | Clock reads banned in `pure_dirs` (AIF010); date/time types stay allowed |
 | `parallel` | `true` | Run mypy, fuzz and pytest concurrently |
+| `docs_check` | `true` | `aif check` also verifies that `docs/` agrees with the code (DOC001-DOC004); a project without `docs/` is never checked |
 | `history` | `true` | Append every check to `.aif/history.jsonl` |
 | `intents` | `true` | Validate `.aif/intents/*.md` during `aif check` |
 | `style` | `true` | Run ruff format check + ruff check over `source_dirs` and `tests` |

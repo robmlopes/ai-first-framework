@@ -1,0 +1,6 @@
+entry_dirs = ["cli"]               # command-line layer: may use domain and ports; adapters only in the composition root
+composition_roots = ["cli.main"]
+# --tables--
+
+[aif.limits.cli]
+max_function_lines = 60

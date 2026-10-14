@@ -65,6 +65,19 @@ def run(root: Path, cfg: Config, use_cache: bool = False) -> list[Error]:
     passed = cache.load(root) if use_cache else {}
     modules = [m for m in files if not (use_cache and passed.get(m) == keys.get(m))]
     errors = _run_worker(root, cfg, modules) if modules else []
+    return _finish(root, cfg, files, keys, passed, modules, errors, use_cache)
+
+
+def _finish(
+    root: Path,
+    cfg: Config,
+    files: dict[str, Path],
+    keys: dict[str, str],
+    passed: dict[str, str],
+    modules: list[str],
+    errors: list[Error],
+    use_cache: bool,
+) -> list[Error]:
     if use_cache and not any(not e.get("file") for e in errors):
         failing = {Path(e["file"]).resolve() for e in errors}
         fresh = {m: keys[m] for m in modules if files[m].resolve() not in failing}
@@ -72,7 +85,26 @@ def run(root: Path, cfg: Config, use_cache: bool = False) -> list[Error]:
     return errors
 
 
+def report(root: Path, cfg: Config) -> dict[str, Any]:
+    """Fuzz without the cache and describe what was tested and what was skipped (see `aif.fuzzreport`)."""
+    from aif import fuzzreport
+
+    if not cfg.fuzz:
+        return {"ok": True, "errors": [], "tested": [], "skipped": [], "summary": {"config": {"fuzz": False}}}
+    modules = [
+        module_of(root, f)
+        for f in source_files(root, cfg)
+        if f.name != "__init__.py" and f.relative_to(root).parts[0] not in cfg.port_dirs
+    ]
+    errors, tested = _worker(root, cfg, modules) if modules else ([], [])
+    return fuzzreport.build(root, cfg, errors, tested)
+
+
 def _run_worker(root: Path, cfg: Config, modules: list[str]) -> list[Error]:
+    return _worker(root, cfg, modules)[0]
+
+
+def _worker(root: Path, cfg: Config, modules: list[str]) -> tuple[list[Error], list[Error]]:
     framework_parent = str(Path(__file__).resolve().parent.parent)
     env = {**os.environ, "PYTHONPATH": f"{root}:{framework_parent}", "PYTHONDONTWRITEBYTECODE": "1"}
     payload = json.dumps(
@@ -82,18 +114,18 @@ def _run_worker(root: Path, cfg: Config, modules: list[str]) -> list[Error]:
         [sys.executable, "-m", "aif.fuzz", payload], cwd=root, env=env, capture_output=True, text=True, check=False
     )
     try:
-        return json.loads(proc.stdout.strip().splitlines()[-1])  # type: ignore[no-any-return]
-    except (IndexError, json.JSONDecodeError):
-        return [
-            {
-                "stage": "fuzz",
-                "rule": "CON005",
-                "file": "",
-                "line": 0,
-                "cause": f"fuzz worker failed: {(proc.stderr or proc.stdout).strip()[-400:]}",
-                "suggestion": "run `python -m aif.fuzz` manually to debug",
-            }
-        ]
+        data = json.loads(proc.stdout.strip().splitlines()[-1])
+        return data["errors"], data["report"]
+    except (IndexError, KeyError, TypeError, json.JSONDecodeError):
+        failed = {
+            "stage": "fuzz",
+            "rule": "CON005",
+            "file": "",
+            "line": 0,
+            "cause": f"fuzz worker failed: {(proc.stderr or proc.stdout).strip()[-400:]}",
+            "suggestion": "run `python -m aif.fuzz` manually to debug",
+        }
+        return [failed], []
 
 
 # ---- worker -----------------------------------------------------------------------------------------------
@@ -122,7 +154,11 @@ def _strategy(hint: Any, override: Any, bound: Any = None) -> Any:
     return st.from_type(hint)
 
 
+_LAST: dict[str, Any] = {}  # side channel from `_check` to the report: examples run, inferred bounds
+
+
 def _check(name: str, fn: Any, examples: int) -> list[Error]:
+    _LAST.clear()
     import hypothesis
     from hypothesis import given, settings
     from hypothesis import strategies as st
@@ -154,6 +190,7 @@ def _check(name: str, fn: Any, examples: int) -> list[Error]:
         ]
     seen = {"ok": 0}
     failure: dict[str, Any] = {}
+    _LAST.update(seen=seen, bounds={k: list(v) for k, v in bounds.items()}, strategies=sorted(meta["strategies"]))
 
     @settings(
         max_examples=examples,
@@ -235,6 +272,23 @@ def _load_setup(dotted: str) -> None:
     spec.loader.exec_module(module)
 
 
+def _entry(module: str, fn: Any, found: list[Error]) -> Error:
+    """One line of the fuzz report for a function that was targeted."""
+    raw = inspect.unwrap(fn)
+    seen = _LAST.get("seen", {}).get("ok", 0)
+    status = "passed" if not found else ("not-generated" if found[0]["rule"] == "CON003" else "failed")
+    return {
+        "module": module,
+        "function": raw.__name__,
+        "line": found[0]["line"] if found else inspect.getsourcelines(raw)[1],
+        "status": status,
+        "examples": seen,
+        "bounds_from_requires": _LAST.get("bounds", {}),
+        "custom_strategies": _LAST.get("strategies", []),
+        "rules": [e["rule"] for e in found],
+    }
+
+
 def main(payload: str) -> int:
     cfg = json.loads(payload)
     from decimal import Decimal
@@ -247,9 +301,12 @@ def main(payload: str) -> int:
     if cfg.get("setup"):
         _load_setup(cfg["setup"])
     errors: list[Error] = []
+    report: list[Error] = []
     for name, fn in _targets(cfg["modules"]):
-        errors += _check(name, fn, cfg["examples"])
-    sys.stdout.write("\n" + json.dumps(errors) + "\n")
+        found = _check(name, fn, cfg["examples"])
+        errors += found
+        report.append(_entry(name, fn, found))
+    sys.stdout.write("\n" + json.dumps({"errors": errors, "report": report}) + "\n")
     return 0
 
 

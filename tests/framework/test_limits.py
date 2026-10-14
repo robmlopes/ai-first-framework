@@ -69,3 +69,14 @@ def test_no_warning_well_below_limit(project: Project) -> None:
 
     project.write("adapters/a.py", func(10))
     assert limits.warnings(project.root, project.cfg) == []
+
+
+def test_file_limit_error_names_the_biggest_definitions(project: Project) -> None:
+    small = "def small() -> int:\n    return 1\n\n\n"
+    big = func(120, "big_one") + "\n\n" + func(100, "next_big")
+    project.write("adapters/a.py", small + big)
+    errors = [e for e in run(project) if "file has" in str(e["cause"])]
+    assert len(errors) == 1
+    hint = str(errors[0]["suggestion"])
+    assert "big_one (" in hint and "next_big (" in hint and hint.index("big_one") < hint.index("next_big")
+    assert "small (" in hint

@@ -1,0 +1,7 @@
+entry_dirs = ["web"]               # FastAPI layer: may use domain and ports; adapters only in the composition root
+composition_roots = ["web.main"]
+third_party = ["fastapi"]
+# --tables--
+
+[aif.limits.web]
+max_function_lines = 60            # route handlers are longer than domain functions

@@ -8,7 +8,7 @@ Every error is a dict: `{"stage", "rule", "file", "line", "cause", "suggestion"}
 | AIF002 | lint | `pure_dirs` | Public top-level function without `@contract` | Add `@contract(...)` |
 | AIF003 | lint | all | Missing parameter or return type hints | Annotate everything |
 | AIF004 | lint | all | Bare `except:` or `except Exception` | Catch a specific error |
-| AIF005 | lint | all | File longer than `max_file_lines` or function longer than `max_function_lines`. Counts code lines only (not blanks, comments or docstrings) unless `count_code_lines = false`; limits can be overridden per layer in `[aif.limits.<layer>]`. The error names the largest blocks to extract; at 90% of a limit a non-failing warning appears in `warnings` | Extract the suggested block |
+| AIF005 | lint | all | File longer than `max_file_lines` or function longer than `max_function_lines`. Counts code lines only (not blanks, comments or docstrings) unless `count_code_lines = false`; limits can be overridden per layer in `[aif.limits.<layer>]`. The error names the largest blocks to extract (for a file: the biggest top-level definitions to move to a new module); at 90% of a limit a non-failing warning appears in `warnings` | Extract the suggested block |
 | AIF006 | lint | all | `from x import y` (absolute or relative) or `import x.y` of a project module/symbol not present in the index; relative imports that climb past the root | Use a name from the suggestion list |
 | AIF007 | lint | all | Use of `global` | Pass state as a parameter |
 | AIF008 | effects | contracts | Declared effect not defined in `[aif.capabilities]` | Use a valid effect |
@@ -67,3 +67,13 @@ Nothing is imported or executed. Packages are located with `importlib.machinery.
 - relative imports (handled by AIF006).
 
 Validated against ~390 files of the stdlib, hypothesis, requests, PyYAML and pytest with zero false positives. Disable with `check_third_party = false`.
+
+## Documentation rules (`stage: docs`)
+
+| Rule | Description | Fix |
+|---|---|---|
+| DOC001 | A rule id the code can emit appears nowhere in `docs/`, or a documented id is never emitted | Document the rule, or remove the stale id |
+| DOC002 | A config option is missing from `docs/configuration.md` | Add a row |
+| DOC003 | A CLI command is missing from `docs/cli.md` | Document it |
+| DOC004 | A relative link points to a missing file or heading | Fix the path or anchor |
+

@@ -30,6 +30,11 @@ def _declared(node: ast.FunctionDef | ast.AsyncFunctionDef) -> set[str] | None:
     return None
 
 
+def declared(node: ast.FunctionDef | ast.AsyncFunctionDef) -> set[str] | None:
+    """Effects declared in @contract (None without one); public for tools that report on contracts."""
+    return _declared(node)
+
+
 def _aliases(tree: ast.Module) -> dict[str, str]:
     """Local name -> dotted origin, from imports and simple module-level aliases (`X = Y`, `type X = Y`)."""
     out: dict[str, str] = {}
