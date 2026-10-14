@@ -42,7 +42,7 @@ Options: `aif init DIR --no-git` skips `git init` and the hooks. The command nev
 
 ## 3. Make the first commit
 
-The hooks require an `Intent:` trailer on every commit.
+The hooks require an `Intent:` trailer on every commit. Commit the skeleton **before** adding code, so the bootstrap intent only covers the skeleton.
 
 ```bash
 git add -A
@@ -99,7 +99,7 @@ def test_half_price() -> None:
     assert discounted(1000, 50) == 500
 ```
 
-Run the verification and fix whatever it reports:
+Run the verification and fix whatever it reports (`aif fix` handles formatting and import order):
 
 ```bash
 aif check --json
@@ -160,7 +160,7 @@ def store(key: str, value: str, db: DbWrite) -> None:
     db.save(key, value)
 ```
 
-The implementation (SQLite, Postgres, an in-memory fake for tests) lives in `adapters/`. See the worked example in [architecture.md](architecture.md).
+List every file the intent touches in its `Scope` (here also `domain/store.py` and `ports/db.py`). The implementation (SQLite, Postgres, an in-memory fake for tests) lives in `adapters/`. See the worked example in [architecture.md](architecture.md).
 
 ## 7. Using an AI agent
 
@@ -197,4 +197,6 @@ aif check --json
 | `CON003` | a parameter has no type hint | annotate it, or pass `strategies=` |
 | `AIF014` for a package you installed | not declared in `third_party` | add it to `aif.toml` |
 | hook rejects the commit with `INT004` | no `Intent: <id>` trailer | add it as the last line of the message |
+| hook rejects the commit with `INT006` | a staged file is not in the cited intent's `Scope` | add the file to that intent, or commit it under another intent |
+| hook says `No module named aif` | the hook found a Python without the framework | activate the virtual environment where you installed `aif`, then commit again |
 | `aif check` is slow | fuzzing runs 100 examples per contract | lower `fuzz_examples` or set `fuzz = false` while iterating, or use `aif fuzz` alone |
