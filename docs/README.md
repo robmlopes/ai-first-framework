@@ -7,7 +7,7 @@ AIF (AI-First Framework) is a set of conventions and tools that keeps an existin
 | [architecture.md](architecture.md) | Principles, layers (domain / ports / adapters), dependency rules |
 | [project-structure.md](project-structure.md) | Directory tree and what each file does |
 | [contracts.md](contracts.md) | The `@contract` decorator, effects and capabilities |
-| [lint-rules.md](lint-rules.md) | Every AIF rule (AIF001-AIF012) with examples |
+| [lint-rules.md](lint-rules.md) | Every AIF rule (AIF001-AIF015) with examples |
 | [cli.md](cli.md) | `aif check`, `aif index`, JSON output schema |
 | [configuration.md](configuration.md) | `aif.toml` reference |
 | [agent-protocol.md](agent-protocol.md) | The loop an AI agent must follow |
@@ -19,6 +19,7 @@ AIF (AI-First Framework) is a set of conventions and tools that keeps an existin
 
 ```bash
 pip install -e ".[dev]"           # Python 3.11+; installs the `aif` command
+aif init my-project                # or start a new project that already passes `aif check`
 aif index                          # writes .aif/index.json
 aif check --json                   # full verification, structured output
 sh scripts/install-hooks.sh        # git hooks: pre-commit + commit-msg

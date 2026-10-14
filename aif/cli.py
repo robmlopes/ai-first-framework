@@ -12,7 +12,7 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 from typing import Any
 
-from aif import agents, fuzz, index, intents, lint, patch, style, types
+from aif import agents, fuzz, index, intents, lint, patch, scaffold, style, types
 from aif.config import load
 
 _CONTRACT = re.compile(r"AIF_CONTRACT (\{.*\})")
@@ -113,17 +113,26 @@ def _intent(root: Path, action: str | None, arg: str | None, rest: list[str]) ->
 
 def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(prog="aif")
-    p.add_argument("command", choices=["check", "index", "patch", "fix", "intent", "agents"])
-    p.add_argument("file", nargs="?", help="patch: target file, e.g. domain/transfer.py")
+    p.add_argument("command", choices=["check", "index", "patch", "fix", "intent", "agents", "fuzz", "init"])
+    p.add_argument("file", nargs="?", help="patch: target file, e.g. domain/transfer.py; init: target directory")
     p.add_argument("symbol", nargs="?", help="patch: top-level function or class to replace")
     p.add_argument("rest", nargs="*", help="intent: extra words (title for `new`)")
     p.add_argument("--from", dest="source", help="patch: file with the new definition (default: stdin)")
     p.add_argument("--dry-run", action="store_true", help="patch: show the diff without writing")
     p.add_argument("--keep", action="store_true", help="patch: keep the change even if lint fails")
+    p.add_argument("--no-git", action="store_true", help="init: do not run git init or install hooks")
     p.add_argument("--json", action="store_true")
     p.add_argument("--root", default=".")
     a = p.parse_args(argv)
     root = Path(a.root).resolve()
+    if a.command == "init":
+        out = scaffold.init(Path(a.file or a.root).resolve(), git=not a.no_git)
+        print(json.dumps(out, indent=2, ensure_ascii=False))
+        return 0 if out["ok"] else 1
+    if a.command == "fuzz":
+        errors = fuzz.run(root, load(root))
+        print(json.dumps({"ok": not errors, "errors": errors}, indent=2, ensure_ascii=False, default=repr))
+        return 0 if not errors else 1
     if a.command == "index":
         index.save(root, load(root))
         print("index written to .aif/index.json")

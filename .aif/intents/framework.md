@@ -10,6 +10,7 @@ The framework itself (CLI, lint rules, hooks, CI, packaging) evolves under its o
 - .gitignore
 - AGENTS.md
 - CLAUDE.md
+- README.md
 - aif.toml
 - aif/__init__.py
 - aif/__main__.py
@@ -26,7 +27,16 @@ The framework itself (CLI, lint rules, hooks, CI, packaging) evolves under its o
 - aif/members.py
 - aif/model.py
 - aif/patch.py
+- aif/scaffold.py
 - aif/style.py
+- aif/templates/aif.toml
+- aif/templates/bootstrap-intent.md
+- aif/templates/commit-msg
+- aif/templates/gitignore
+- aif/templates/pre-commit
+- aif/templates/protocol.md
+- aif/templates/pyproject.toml
+- aif/templates/strategies.py.txt
 - aif/thirdparty.py
 - aif/types.py
 - pyproject.toml

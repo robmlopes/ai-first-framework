@@ -1,0 +1,23 @@
+[aif]
+source_dirs = ["domain", "ports", "adapters"]
+pure_dirs = ["domain"]            # no I/O, @contract required
+port_dirs = ["ports"]             # interfaces only
+max_file_lines = 200
+max_function_lines = 40
+intents = true                    # validate .aif/intents/*.md
+style = true                      # ruff format + ruff check
+typecheck = true                  # run mypy over source_dirs
+typecheck_tests = true            # ...and over tests/
+fuzz = true                       # property-check every @contract(ensures=...) from type hints
+fuzz_examples = 100
+fuzz_setup = "tests.strategies"   # module registering domain input strategies
+mypy_args = ["--strict"]
+forbidden_imports = ["builtins", "importlib", "os", "sys", "subprocess", "socket", "requests", "urllib", "http", "sqlite3", "pathlib", "shutil", "random", "datetime"]
+forbidden_calls = ["open", "print", "input", "exec", "eval", "compile", "__import__", "getattr", "setattr", "delattr", "globals", "locals", "vars"]
+
+# Third-party packages (top-level import names) that source_dirs may import; must also be in pyproject.toml
+third_party = []
+check_third_party = true
+
+# Capability (parameter type) -> effects it grants. Example: DbWrite = ["db.write"]
+[aif.capabilities]

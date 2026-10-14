@@ -136,6 +136,14 @@ Intents live in `.aif/intents/<id>.md` (kebab-case id). Required format:
 
 Intent errors use `"stage": "intents"`. `aif check` validates all intents (INT001-INT003); INT004-INT006 apply to commit messages via `scripts/commit-msg`, which you install as a git `commit-msg` hook.
 
+## `aif init [DIR]`
+
+Creates a new AIF project in `DIR` (default `--root`): `aif.toml`, `pyproject.toml`, `.gitignore`, `.aif/protocol.md`, a `bootstrap` intent, empty `domain/ ports/ adapters/ tests/` packages, `tests/strategies.py`, the hook scripts and the generated agent files. It runs `git init` and installs the hooks unless `--no-git` is given, never overwrites existing files, and refuses a directory that already has an `aif.toml`. The result passes `aif check` immediately. Templates live in `aif/templates/`.
+
+## `aif fuzz`
+
+Runs only the contract-fuzzing stage and prints `{"ok", "errors"}` (see `contracts.md`, rules CON001-CON005). Useful while iterating on a contract, because the full pipeline takes longer.
+
 ## `aif agents`
 
 `.aif/protocol.md` is the single source of the agent protocol. `aif agents` renders it into `AGENTS.md` (generic agents), `CLAUDE.md` (Claude Code) and `.cursor/rules/aif.mdc` (Cursor). `aif check` fails with `AGT001` (`stage: "agents"`) when a generated file is missing or differs from the source; fix with `aif agents`. Edit the protocol only in `.aif/protocol.md`.

@@ -1,0 +1,9 @@
+"""Input domains for `aif fuzz`: types registered here are used wherever they appear in a contract signature.
+
+Example:
+
+    from decimal import Decimal
+    from hypothesis import strategies as st
+
+    st.register_type_strategy(Decimal, st.decimals(min_value=0, max_value=10**9, places=2))
+"""

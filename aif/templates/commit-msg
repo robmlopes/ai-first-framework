@@ -1,0 +1,9 @@
+#!/bin/sh
+# Install with: sh scripts/install-hooks.sh
+# Rejects commits that lack an 'Intent: <id>' trailer, name an unknown intent,
+# or stage source files outside the intent's Scope.
+PY="${PYTHON:-python3}"
+OUT=$("$PY" -m aif intent commit-msg "$1") || {
+  echo "$OUT" >&2
+  exit 1
+}
