@@ -9,8 +9,9 @@ aif <command> [--json] [--root PATH]      # same as: python -m aif ...
 | `index` | Writes `.aif/index.json` |
 | `patch FILE SYMBOL` | Replaces one top-level function or class (see below) |
 | `intent new\|list\|commit-msg` | Manage and validate intents (see below) |
+| `agents` | Regenerates `AGENTS.md`, `CLAUDE.md` and `.cursor/rules/aif.mdc` from `.aif/protocol.md` |
 | `fix` | Applies canonical formatting and safe autofixes (ruff), returns what remains |
-| `check` | Index -> style (ruff) -> intents -> lint/effects -> types (mypy) -> tests. Exit code 0 when ok, 1 otherwise |
+| `check` | Index -> style (ruff) -> agent files -> intents -> lint/effects -> types (mypy) -> tests. Exit code 0 when ok, 1 otherwise |
 
 `--root` defaults to the current directory.
 
@@ -65,7 +66,7 @@ aif <command> [--json] [--root PATH]      # same as: python -m aif ...
  "suggestion": "returned value does not match the declared type; ..."}
 ```
 
-`rule` is the mypy error code. Stages run in order (style, intents, lint/effects, types, tests); each runs only if the previous passed.
+`rule` is the mypy error code. Stages run in order (style, agents, intents, lint/effects, types, tests); each runs only if the previous passed.
 
 ## `aif patch`
 
@@ -134,3 +135,7 @@ Intents live in `.aif/intents/<id>.md` (kebab-case id). Required format:
 | INT006 | A staged file is not listed in the cited intent's `Scope` (docs/, tests/, `.aif/`, root files and empty `__init__.py` are exempt) |
 
 Intent errors use `"stage": "intents"`. `aif check` validates all intents (INT001-INT003); INT004-INT006 apply to commit messages via `scripts/commit-msg`, which you install as a git `commit-msg` hook.
+
+## `aif agents`
+
+`.aif/protocol.md` is the single source of the agent protocol. `aif agents` renders it into `AGENTS.md` (generic agents), `CLAUDE.md` (Claude Code) and `.cursor/rules/aif.mdc` (Cursor). `aif check` fails with `AGT001` (`stage: "agents"`) when a generated file is missing or differs from the source; fix with `aif agents`. Edit the protocol only in `.aif/protocol.md`.

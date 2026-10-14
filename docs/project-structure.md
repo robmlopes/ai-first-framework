@@ -4,9 +4,11 @@
 project/
 ├── .github/workflows/aif.yml # CI
 ├── aif.toml                  # rules, limits, allowed capabilities
-├── CLAUDE.md                 # agent protocol (instructions file)
+├── AGENTS.md, CLAUDE.md      # generated agent instructions (do not edit)
+├── .cursor/rules/aif.mdc     # generated, for Cursor
 ├── pyproject.toml            # packaging and pytest config
 ├── .aif/
+│   ├── protocol.md           # single source of the agent protocol
 │   ├── index.json            # generated map: modules, functions, signatures, contracts
 │   └── intents/              # human intent per feature - the "why"
 │       └── money-transfer.md # example intent
@@ -18,6 +20,7 @@ project/
 │   ├── contract.py           # @contract decorator and ContractViolation
 │   ├── index.py              # AST -> index.json generator
 │   ├── lint.py               # rules AIF001-AIF007, AIF012
+│   ├── agents.py             # generates agent instruction files
 │   ├── intents.py            # intent parsing, validation, `aif intent`
 │   ├── style.py              # ruff stage and `aif fix`
 │   ├── types.py              # mypy stage (structured type errors)
@@ -49,6 +52,7 @@ project/
 | `aif.lint` | `run` | Per-file rules, then delegates to `effects.run` |
 | `aif.effects` | `run` | Capability/effect matching, direct I/O calls, import graph |
 | `aif.config` | `Config`, `load` | Reads `[aif]` from `aif.toml` |
+| `aif.agents` | `render`, `stale`, `write` | Generates agent instruction files from `.aif/protocol.md` |
 | `aif.intents` | `run`, `create`, `listing`, `check_message` | Validates intents and commit trailers |
 | `aif.style` | `run`, `fix` | Canonical formatting and style rules via ruff |
 | `aif.types` | `run` | Runs mypy and converts output to AIF errors |

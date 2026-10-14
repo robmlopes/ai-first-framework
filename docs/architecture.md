@@ -47,10 +47,11 @@ A function that takes `db: DbWrite` must declare `effects=["db.write"]`, and vic
 
 1. Regenerate the index
 2. Style (ruff format + ruff check): one canonical form
-3. Intents (`.aif/intents/*.md` well-formed, scope paths exist)
-4. Lint + effects (AST rules)
-5. Types (mypy `--strict` over `source_dirs`); also checks adapters against port Protocols
-6. Tests (pytest + Hypothesis); contract violations become structured counterexamples
+3. Agent files up to date (AGT001)
+4. Intents (`.aif/intents/*.md` well-formed, scope paths exist)
+5. Lint + effects (AST rules)
+6. Types (mypy `--strict` over `source_dirs`); also checks adapters against port Protocols
+7. Tests (pytest + Hypothesis); contract violations become structured counterexamples
 
 ## Worked example: domain -> port -> adapter
 

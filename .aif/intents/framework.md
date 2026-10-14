@@ -4,12 +4,16 @@
 The framework itself (CLI, lint rules, hooks, CI, packaging) evolves under its own intent so every commit stays traceable.
 
 ## Scope
+- .aif/protocol.md
+- .cursor/rules/aif.mdc
 - .github/workflows/aif.yml
 - .gitignore
+- AGENTS.md
 - CLAUDE.md
 - aif.toml
 - aif/__init__.py
 - aif/__main__.py
+- aif/agents.py
 - aif/cli.py
 - aif/config.py
 - aif/contract.py

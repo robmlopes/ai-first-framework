@@ -1,6 +1,6 @@
 # Agent protocol
 
-The same text lives in `CLAUDE.md` at the project root.
+Source of truth: `.aif/protocol.md`. `aif agents` generates `AGENTS.md`, `CLAUDE.md` and `.cursor/rules/aif.mdc` from it; `aif check` flags drift (AGT001). Do not edit the generated files.
 
 1. Read `.aif/index.json` (`python -m aif index`) and the intent file for the task (`python -m aif intent list`; create one with `aif intent new ID TITLE`). Never invent names.
 2. Plan which modules change (ideally one or two).

@@ -16,9 +16,12 @@
 - Type checking covers `source_dirs` and `tests/` (`typecheck_tests`). Port conformance needs an explicit typed assignment such as `as_db_write`.
 
 ## Roadmap
+
+Open: TypeScript port of the framework (separate project); pyright support.
+
 1. ~~`aif patch`~~ (done, including methods).
 2. ~~SQLite adapter example~~ (done: `adapters/sqlite_db.py`).
 3. ~~`.aif/intents/` support~~ (done, including the Scope check at commit time, INT006).
 4. ~~Ruff and mypy stages~~ (done; pyright not supported).
-5. ~~Git hooks, CI, framework tests, `aif` entry point~~ (done).
+5. ~~Git hooks, CI, framework tests, `aif` entry point, agent files~~ (done).
 6. ~~Method-level indexing~~ (done). `Class.member` references are validated (AIF012). Relative imports and `import x.y` are validated (AIF006).

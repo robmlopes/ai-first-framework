@@ -12,7 +12,7 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 from typing import Any
 
-from aif import index, intents, lint, patch, style, types
+from aif import agents, index, intents, lint, patch, style, types
 from aif.config import load
 
 _CONTRACT = re.compile(r"AIF_CONTRACT (\{.*\})")
@@ -49,10 +49,28 @@ def _tests(root: Path) -> list[dict[str, Any]]:
         return errors
 
 
+def _agent_files(root: Path) -> list[dict[str, Any]]:
+    if not (root / ".aif" / "protocol.md").is_file():
+        return []
+    return [
+        {
+            "stage": "agents",
+            "rule": "AGT001",
+            "file": name,
+            "line": 1,
+            "cause": "agent instruction file is out of date with .aif/protocol.md",
+            "suggestion": "run `aif agents`",
+        }
+        for name in agents.stale(root)
+    ]
+
+
 def check(root: Path) -> dict[str, Any]:
     cfg = load(root)
     index.save(root, cfg)
     errors = style.run(root, cfg)
+    if not errors:
+        errors = _agent_files(root)
     if not errors:
         errors = intents.run(root, cfg)
     if not errors:
@@ -93,7 +111,7 @@ def _intent(root: Path, action: str | None, arg: str | None, rest: list[str]) ->
 
 def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(prog="aif")
-    p.add_argument("command", choices=["check", "index", "patch", "fix", "intent"])
+    p.add_argument("command", choices=["check", "index", "patch", "fix", "intent", "agents"])
     p.add_argument("file", nargs="?", help="patch: target file, e.g. domain/transfer.py")
     p.add_argument("symbol", nargs="?", help="patch: top-level function or class to replace")
     p.add_argument("rest", nargs="*", help="intent: extra words (title for `new`)")
@@ -107,6 +125,10 @@ def main(argv: list[str] | None = None) -> int:
     if a.command == "index":
         index.save(root, load(root))
         print("index written to .aif/index.json")
+        return 0
+    if a.command == "agents":
+        names = agents.write(root)
+        print(json.dumps({"ok": True, "written": names}, indent=2))
         return 0
     if a.command == "intent":
         return _intent(root, a.file, a.symbol, a.rest)
