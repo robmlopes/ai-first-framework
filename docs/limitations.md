@@ -3,7 +3,7 @@
 ## Known limits
 
 - **Discipline, not guarantee.** Python cannot prevent bypassing the conventions; strength comes from lint and CI.
-- **Runtime contracts prove nothing** beyond the cases exercised; Hypothesis helps but is not proof.
+- **Contracts are checked by sampling, not proved.** `aif fuzz` generates inputs automatically (deterministic, 100 per function by default), so bugs no longer depend on the author having written the right test, but a bug in a very narrow input region can still be missed. Functions with declared effects are not fuzzed, and the quality of the generated inputs depends on type hints and `strategies=`.
 - **Specification cost.** A wrong contract yields "correct" code doing the wrong thing.
 - **Overhead on tiny projects.**
 - **Index freshness.** Regenerated on every `aif check`; stale if only `aif index` is skipped elsewhere.

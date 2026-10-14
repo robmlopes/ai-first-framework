@@ -50,8 +50,9 @@ A function that takes `db: DbWrite` must declare `effects=["db.write"]`, and vic
 3. Agent files up to date (AGT001)
 4. Intents (`.aif/intents/*.md` well-formed, scope paths exist)
 5. Lint + effects (AST rules)
-6. Types (mypy `--strict` over `source_dirs`); also checks adapters against port Protocols
-7. Tests (pytest + Hypothesis); contract violations become structured counterexamples
+6. Types (mypy `--strict` over `source_dirs` and `tests/`); also checks adapters against port Protocols
+7. Contract fuzzing: every `@contract(ensures=...)` is property-checked from type hints (CON rules)
+8. Tests (pytest + Hypothesis); contract violations become structured counterexamples
 
 ## Worked example: domain -> port -> adapter
 

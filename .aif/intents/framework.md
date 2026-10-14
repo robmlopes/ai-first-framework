@@ -19,6 +19,7 @@ The framework itself (CLI, lint rules, hooks, CI, packaging) evolves under its o
 - aif/contract.py
 - aif/dynamic.py
 - aif/effects.py
+- aif/fuzz.py
 - aif/index.py
 - aif/intents.py
 - aif/lint.py

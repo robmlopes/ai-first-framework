@@ -35,7 +35,7 @@ def test_postcondition_violation_includes_result() -> None:
 
 
 def test_effects_exposed_on_wrapper() -> None:
-    assert getattr(double, "__aif__") == {"effects": []}  # noqa: B009
+    assert getattr(double, "__aif__")["effects"] == []  # noqa: B009
 
 
 def test_contracts_can_be_disabled(monkeypatch: pytest.MonkeyPatch) -> None:

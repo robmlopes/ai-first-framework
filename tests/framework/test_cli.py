@@ -41,6 +41,20 @@ def test_check_lint_error_stops_before_tests(project: Project, capsys: pytest.Ca
 
 
 def test_check_reports_contract_counterexample(project: Project, capsys: pytest.CaptureFixture[str]) -> None:
+    """A broken implementation is caught by fuzzing even when no test exercises the bad case."""
+    project.write("domain/m.py", GOOD.replace("x + 1", "x - 1"))
+    project.write("tests/test_m.py", "from domain.m import inc\n\n\ndef test_inc() -> None:\n    inc(3)\n")
+    code, out = run_check(project, capsys)
+    assert code == 1
+    err = out["errors"][0]
+    assert err["stage"] == "fuzz" and err["rule"] == "CON001"
+    assert err["counterexample"]["inputs"]["x"].lstrip("-").isdigit()
+
+
+def test_check_reports_test_stage_contract_violation(project: Project, capsys: pytest.CaptureFixture[str]) -> None:
+    """With fuzzing off, the violation is still reported by the test stage with its counterexample."""
+    text = (project.root / "aif.toml").read_text().replace("[aif]\n", "[aif]\nfuzz = false\n", 1)
+    project.write("aif.toml", text)
     project.write("domain/m.py", GOOD.replace("x + 1", "x - 1"))
     project.write("tests/test_m.py", "from domain.m import inc\n\n\ndef test_inc() -> None:\n    inc(3)\n")
     framework = Path(aif.__file__).resolve().parent.parent

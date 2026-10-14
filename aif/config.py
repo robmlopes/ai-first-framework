@@ -15,6 +15,10 @@ class Config:
     style: bool = True
     typecheck: bool = True
     typecheck_tests: bool = True
+    fuzz: bool = True
+    fuzz_examples: int = 100
+    fuzz_finite_numbers: bool = True
+    fuzz_setup: str = ""
     mypy_args: list[str] = field(default_factory=lambda: ["--strict"])
     forbidden_imports: list[str] = field(default_factory=list)
     port_dirs: list[str] = field(default_factory=lambda: ["ports"])

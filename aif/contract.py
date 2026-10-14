@@ -2,6 +2,8 @@
 
 Lambdas may name only the parameters they use. In `ensures`, the first
 positional parameter receives the function result.
+`strategies` optionally maps parameter names to Hypothesis strategies used by `aif fuzz`
+when automatic generation from type hints is too broad or too narrow.
 Disable in production with AIF_CONTRACTS=off.
 """
 
@@ -41,6 +43,7 @@ def contract(
     requires: Predicate | None = None,
     ensures: Predicate | None = None,
     effects: list[str] | tuple[str, ...] = (),
+    strategies: dict[str, Any] | None = None,
 ) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
     def decorator(fn: Callable[..., Any]) -> Callable[..., Any]:
         signature = inspect.signature(fn)
@@ -60,7 +63,12 @@ def contract(
                 raise ContractViolation("postcondition", name, {"inputs": inputs, "result": result})
             return result
 
-        wrapper.__aif__ = {"effects": list(effects)}  # type: ignore[attr-defined]
+        wrapper.__aif__ = {  # type: ignore[attr-defined]
+            "effects": list(effects),
+            "requires": requires,
+            "ensures": ensures,
+            "strategies": dict(strategies or {}),
+        }
         return wrapper
 
     return decorator

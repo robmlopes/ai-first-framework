@@ -12,7 +12,7 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 from typing import Any
 
-from aif import agents, index, intents, lint, patch, style, types
+from aif import agents, fuzz, index, intents, lint, patch, style, types
 from aif.config import load
 
 _CONTRACT = re.compile(r"AIF_CONTRACT (\{.*\})")
@@ -77,7 +77,9 @@ def check(root: Path) -> dict[str, Any]:
         errors = lint.run(root, cfg)
     if not errors:
         errors = types.run(root, cfg)
-    if not errors:  # tests only run when lint and types pass
+    if not errors:
+        errors = fuzz.run(root, cfg)
+    if not errors:  # tests only run when lint, types and fuzzing pass
         errors = _tests(root)
     return {"ok": not errors, "errors": errors}
 

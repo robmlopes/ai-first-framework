@@ -15,6 +15,10 @@ All keys live under `[aif]`. Unknown keys are ignored; missing keys use defaults
 | `typecheck_tests` | `true` | Also type-check `tests/` |
 | `third_party` | `[]` | Top-level import names of third-party packages that `source_dirs` may import (AIF014) |
 | `check_third_party` | `true` | Enable AIF014/AIF015 |
+| `fuzz` | `true` | Property-check every `@contract(ensures=...)` from type hints (CON001-CON005) |
+| `fuzz_examples` | `100` | Generated inputs per function |
+| `fuzz_finite_numbers` | `true` | Generate only finite floats/decimals |
+| `fuzz_setup` | `""` | Module that registers domain input strategies (e.g. `tests.strategies`) |
 | `mypy_args` | `["--strict"]` | Extra mypy arguments |
 | `forbidden_imports` | `[]` | Top-level modules banned in `pure_dirs` (AIF001) and treated as I/O by AIF011 |
 | `forbidden_calls` | `open, print, input, exec, eval, compile, __import__, getattr, setattr` | Names banned in `pure_dirs` (AIF010), also when reached via `builtins.` or an alias |
