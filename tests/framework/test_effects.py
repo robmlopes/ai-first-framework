@@ -1,15 +1,18 @@
 from __future__ import annotations
 
+from typing import Any
+
 from aif import effects
+from tests.framework.conftest import Project
 
 HEAD = "from aif import contract\nfrom ports.db import DbWrite\n\n\n"
 
 
-def run(project):
+def run(project: Project) -> list[dict[str, Any]]:
     return effects.run(project.root, project.cfg)
 
 
-def test_matching_effect_and_capability_ok(project):
+def test_matching_effect_and_capability_ok(project: Project) -> None:
     project.write(
         "domain/m.py",
         HEAD + '@contract(effects=["db.write"])\ndef f(db: DbWrite) -> None:\n    db.save(1)\n',
@@ -17,38 +20,38 @@ def test_matching_effect_and_capability_ok(project):
     assert run(project) == []
 
 
-def test_aif009_capability_without_declared_effect(project):
+def test_aif009_capability_without_declared_effect(project: Project) -> None:
     project.write("domain/m.py", HEAD + "@contract(effects=[])\ndef f(db: DbWrite) -> None:\n    db.save(1)\n")
     assert project.rules(run(project)) == ["AIF009"]
 
 
-def test_aif009_declared_effect_without_capability(project):
+def test_aif009_declared_effect_without_capability(project: Project) -> None:
     project.write("domain/m.py", HEAD + '@contract(effects=["db.write"])\ndef f(x: int) -> None:\n    pass\n')
     assert project.rules(run(project)) == ["AIF009"]
 
 
-def test_aif008_unknown_effect(project):
+def test_aif008_unknown_effect(project: Project) -> None:
     project.write("domain/m.py", HEAD + '@contract(effects=["net.read"])\ndef f(x: int) -> None:\n    pass\n')
     assert "AIF008" in project.rules(run(project))
 
 
-def test_aif010_direct_call_in_domain(project):
+def test_aif010_direct_call_in_domain(project: Project) -> None:
     project.write("domain/m.py", HEAD + "@contract(effects=[])\ndef f() -> None:\n    print('x')\n")
     assert project.rules(run(project)) == ["AIF010"]
 
 
-def test_aif010_not_enforced_outside_domain(project):
+def test_aif010_not_enforced_outside_domain(project: Project) -> None:
     project.write("adapters/a.py", "def f() -> None:\n    print('x')\n")
     assert run(project) == []
 
 
-def test_aif011_domain_imports_adapter(project):
+def test_aif011_domain_imports_adapter(project: Project) -> None:
     project.write("adapters/a.py", "class A: ...\n")
     project.write("domain/m.py", "from adapters.a import A\n")
     assert project.rules(run(project)) == ["AIF011"]
 
 
-def test_aif011_indirect_io_through_port(project):
+def test_aif011_indirect_io_through_port(project: Project) -> None:
     project.write("ports/leak.py", "import sqlite3\n")
     project.write("domain/m.py", "import ports.leak\n")
     errors = run(project)
@@ -56,18 +59,18 @@ def test_aif011_indirect_io_through_port(project):
     assert "domain.m -> ports.leak -> sqlite3" in errors[0]["cause"]
 
 
-def test_domain_may_import_port(project):
+def test_domain_may_import_port(project: Project) -> None:
     project.write("domain/m.py", "from ports.db import DbWrite\n")
     assert run(project) == []
 
 
-def test_aif011_domain_imports_adapter_symbol(project):
+def test_aif011_domain_imports_adapter_symbol(project: Project) -> None:
     project.write("adapters/a.py", "class A: ...\n")
     project.write("domain/m.py", "from adapters.a import A\n")
     assert project.rules(run(project)) == ["AIF011"]
 
 
-def test_aif011_indirect_through_relative_import(project):
+def test_aif011_indirect_through_relative_import(project: Project) -> None:
     project.write("ports/leak.py", "import sqlite3\n")
     project.write("ports/mid.py", "from . import leak\n")
     project.write("domain/m.py", "from ports import mid\n")
@@ -76,36 +79,36 @@ def test_aif011_indirect_through_relative_import(project):
     assert "ports.mid -> ports.leak -> sqlite3" in errors[0]["cause"]
 
 
-def _rules_for(project, body):
+def _rules_for(project: Project, body: str) -> list[str]:
     project.write("domain/m.py", "from aif import contract\n" + body)
     return project.rules(run(project))
 
 
-def test_aif010_builtins_qualified(project):
+def test_aif010_builtins_qualified(project: Project) -> None:
     assert _rules_for(project, "import builtins\n\n\ndef _f() -> None:\n    builtins.open('x')\n") == ["AIF010"]
 
 
-def test_aif010_alias_of_builtin(project):
+def test_aif010_alias_of_builtin(project: Project) -> None:
     assert _rules_for(project, "reader = open\n\n\ndef _f() -> None:\n    reader('x')\n") == ["AIF010"]
 
 
-def test_aif010_module_function_call(project):
+def test_aif010_module_function_call(project: Project) -> None:
     assert "AIF010" in _rules_for(project, "import os\n\n\ndef _f() -> None:\n    os.getcwd()\n")
 
 
-def test_aif010_from_import_alias(project):
+def test_aif010_from_import_alias(project: Project) -> None:
     assert "AIF010" in _rules_for(project, "from os import getcwd as cwd\n\n\ndef _f() -> None:\n    cwd()\n")
 
 
-def test_aif010_getattr_blocked(project):
+def test_aif010_getattr_blocked(project: Project) -> None:
     assert _rules_for(project, "def _f(x: object) -> object:\n    return getattr(x, 'a')\n") == ["AIF010"]
 
 
-def test_aif010_plain_code_ok(project):
+def test_aif010_plain_code_ok(project: Project) -> None:
     assert _rules_for(project, "def _f(x: int) -> int:\n    return abs(x) + len([x])\n") == []
 
 
-def test_capability_through_import_alias(project):
+def test_capability_through_import_alias(project: Project) -> None:
     body = (
         "from ports.db import DbWrite as Writer\n\n\n"
         '@contract(effects=["db.write"])\ndef f(db: Writer) -> None:\n    db.save(1)\n'
@@ -115,7 +118,7 @@ def test_capability_through_import_alias(project):
     assert _rules_for(project, body) == ["AIF009"]
 
 
-def test_capability_through_module_alias_and_assignment(project):
+def test_capability_through_module_alias_and_assignment(project: Project) -> None:
     body = (
         "import ports.db as pdb\nfrom ports.db import DbWrite\n\nCap = DbWrite\n\n\n"
         "@contract(effects=[])\ndef f(a: pdb.DbWrite, b: Cap) -> None:\n    pass\n"
@@ -128,7 +131,7 @@ def test_capability_through_module_alias_and_assignment(project):
     assert project.rules(errors) == ["AIF009"]
 
 
-def test_capability_inside_union_generic_and_quotes(project):
+def test_capability_inside_union_generic_and_quotes(project: Project) -> None:
     for ann in ("DbWrite | None", "list[DbWrite]", "'DbWrite'", "Optional[DbWrite]"):
         body = (
             "from typing import Optional\n\nfrom ports.db import DbWrite\n\n\n"

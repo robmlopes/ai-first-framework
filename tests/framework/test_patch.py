@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+from typing import Any
+
 from aif import patch
+from tests.framework.conftest import Project
 
 SRC = """from aif import contract
 
@@ -24,11 +27,11 @@ def g() -> int:
 """
 
 
-def apply(project, symbol, new, **kw):
+def apply(project: Project, symbol: str, new: str, **kw: bool) -> dict[str, Any]:
     return patch.apply(project.root, project.cfg, "domain/m.py", symbol, new, **kw)
 
 
-def test_replaces_only_target_function(project):
+def test_replaces_only_target_function(project: Project) -> None:
     project.write("domain/m.py", SRC)
     new = "@contract(requires=lambda x: x > 0, effects=[])\ndef f(x: int) -> int:\n    return x + 1\n"
     out = apply(project, "f", new)
@@ -37,7 +40,7 @@ def test_replaces_only_target_function(project):
     assert "return x + 1" in text and "def g()" in text and "class Box" in text
 
 
-def test_patch_method_reindents(project):
+def test_patch_method_reindents(project: Project) -> None:
     project.write("domain/m.py", SRC)
     out = apply(project, "Box.get", "def get(self) -> int:\n    return 99\n")
     assert out["ok"], out
@@ -46,14 +49,14 @@ def test_patch_method_reindents(project):
     assert "def put(self)" in text
 
 
-def test_dry_run_does_not_write(project):
+def test_dry_run_does_not_write(project: Project) -> None:
     project.write("domain/m.py", SRC)
     out = apply(project, "Box.get", "def get(self) -> int:\n    return 99\n", dry_run=True)
     assert out["ok"] and out["dry_run"] and "return 99" in out["diff"]
     assert "return 99" not in (project.root / "domain/m.py").read_text()
 
 
-def test_lint_failure_rolls_back(project):
+def test_lint_failure_rolls_back(project: Project) -> None:
     project.write("domain/m.py", SRC)
     out = apply(project, "Box.get", "def get(self):\n    return 99\n")
     assert not out["ok"] and out["rolled_back"]
@@ -61,14 +64,14 @@ def test_lint_failure_rolls_back(project):
     assert (project.root / "domain/m.py").read_text() == SRC
 
 
-def test_keep_flag_preserves_change(project):
+def test_keep_flag_preserves_change(project: Project) -> None:
     project.write("domain/m.py", SRC)
     out = apply(project, "Box.get", "def get(self):\n    return 99\n", keep=True)
     assert out["ok"] and out["errors"]
     assert "return 99" in (project.root / "domain/m.py").read_text()
 
 
-def test_rejections(project):
+def test_rejections(project: Project) -> None:
     project.write("domain/m.py", SRC)
     assert "expected 'f'" in apply(project, "f", "def other() -> None: ...")["cause"]
     assert "not found" in apply(project, "nope", "def nope() -> None: ...")["cause"]
@@ -78,7 +81,7 @@ def test_rejections(project):
     assert "not found" in apply(project, "Box.nope", "def nope(self) -> None: ...")["cause"]
 
 
-def test_rejects_paths_outside_source_dirs(project):
+def test_rejects_paths_outside_source_dirs(project: Project) -> None:
     project.write("tests_dir/x.py", "x = 1\n")
     for bad in ("../outside.py", "tests_dir/x.py", "domain/m.txt"):
         out = patch.apply(project.root, project.cfg, bad, "f", "def f() -> None: ...")

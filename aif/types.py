@@ -1,4 +1,4 @@
-"""Type-check stage: runs mypy over source_dirs and returns structured errors."""
+"""Type-check stage: runs mypy over source_dirs (and tests/) and returns structured errors."""
 
 from __future__ import annotations
 
@@ -57,7 +57,7 @@ def _parse(output: str) -> list[Error]:
 def run(root: Path, cfg: Config) -> list[Error]:
     if not cfg.typecheck:
         return []
-    dirs = [d for d in cfg.source_dirs if (root / d).is_dir()]
+    dirs = [d for d in [*cfg.source_dirs, *(["tests"] if cfg.typecheck_tests else [])] if (root / d).is_dir()]
     cmd = [
         sys.executable,
         "-m",

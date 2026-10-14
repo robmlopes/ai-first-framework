@@ -13,7 +13,7 @@
 - Imports are validated for project modules only; third-party imports are not checked against any index.
 - AIF011 follows module-level import paths that start in the domain.
 - `aif patch` handles top-level definitions and methods of top-level classes. It cannot patch nested functions, module-level statements or imports, and does not run tests.
-- Type checking covers only `source_dirs`; `tests/` is not type-checked. Port conformance needs an explicit typed assignment such as `as_db_write`.
+- Type checking covers `source_dirs` and `tests/` (`typecheck_tests`). Port conformance needs an explicit typed assignment such as `as_db_write`.
 
 ## Roadmap
 1. ~~`aif patch`~~ (done, including methods).

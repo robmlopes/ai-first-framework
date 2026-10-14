@@ -17,7 +17,7 @@ All code, identifiers, comments, docstrings, error messages, JSON keys, configur
 
 ## Code
 
-- Full type hints on every function.
+- Full type hints on every function, including tests (`mypy --strict` runs over `tests/` too).
 - Typed errors only; never `except Exception`.
 - No global mutable state.
 - Immutable data (`@dataclass(frozen=True)`) in the domain.

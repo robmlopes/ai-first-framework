@@ -14,6 +14,7 @@ class Config:
     intents: bool = True
     style: bool = True
     typecheck: bool = True
+    typecheck_tests: bool = True
     mypy_args: list[str] = field(default_factory=lambda: ["--strict"])
     forbidden_imports: list[str] = field(default_factory=list)
     port_dirs: list[str] = field(default_factory=lambda: ["ports"])

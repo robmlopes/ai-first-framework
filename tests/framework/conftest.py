@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from pathlib import Path
+from typing import Any
 
 import pytest
 
@@ -44,7 +45,7 @@ class Project:
     def cfg(self) -> Config:
         return load(self.root)
 
-    def rules(self, errors: list[dict]) -> list[str]:
+    def rules(self, errors: list[dict[str, Any]]) -> list[str]:
         return sorted(e["rule"] for e in errors if "rule" in e)
 
 

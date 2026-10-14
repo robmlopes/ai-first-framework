@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 from aif import index
+from tests.framework.conftest import Project
 
 
-def test_index_lists_functions_classes_methods(project):
+def test_index_lists_functions_classes_methods(project: Project) -> None:
     project.write(
         "domain/m.py",
         '''from aif import contract
@@ -40,10 +41,10 @@ def f(x: int) -> int:
     assert idx["Box"]["methods"]["open"]["kind"] == "method"
 
 
-def test_package_init_maps_to_package_name(project):
+def test_package_init_maps_to_package_name(project: Project) -> None:
     assert "domain" in index.generate(project.root, project.cfg)
 
 
-def test_save_writes_json(project):
+def test_save_writes_json(project: Project) -> None:
     index.save(project.root, project.cfg)
     assert (project.root / ".aif" / "index.json").is_file()
