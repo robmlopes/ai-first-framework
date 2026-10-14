@@ -8,8 +8,8 @@ intents = true                    # validate .aif/intents/*.md
 style = true                      # ruff format + ruff check
 typecheck = true                  # run mypy over source_dirs
 mypy_args = ["--strict"]
-forbidden_imports = ["os", "sys", "subprocess", "socket", "requests", "urllib", "http", "sqlite3", "pathlib", "shutil", "random", "datetime"]
-forbidden_calls = ["open", "print", "input", "exec", "eval", "__import__"]
+forbidden_imports = ["builtins", "importlib", "os", "sys", "subprocess", "socket", "requests", "urllib", "http", "sqlite3", "pathlib", "shutil", "random", "datetime"]
+forbidden_calls = ["open", "print", "input", "exec", "eval", "compile", "__import__", "getattr", "setattr", "delattr", "globals", "locals", "vars"]
 
 # Capability (parameter type) -> effects it grants
 [aif.capabilities]

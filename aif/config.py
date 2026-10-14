@@ -17,7 +17,19 @@ class Config:
     mypy_args: list[str] = field(default_factory=lambda: ["--strict"])
     forbidden_imports: list[str] = field(default_factory=list)
     port_dirs: list[str] = field(default_factory=lambda: ["ports"])
-    forbidden_calls: list[str] = field(default_factory=lambda: ["open", "print", "input", "exec", "eval", "__import__"])
+    forbidden_calls: list[str] = field(
+        default_factory=lambda: [
+            "open",
+            "print",
+            "input",
+            "exec",
+            "eval",
+            "compile",
+            "__import__",
+            "getattr",
+            "setattr",
+        ]
+    )
     capabilities: dict[str, list[str]] = field(default_factory=dict)
 
     def layer(self, path: str) -> str:

@@ -8,7 +8,7 @@ from typing import Any
 
 from aif import effects
 from aif.config import Config
-from aif.index import class_attributes, generate, source_files
+from aif.index import class_attributes, generate, resolve_from, source_files
 
 Error = dict[str, Any]
 
@@ -60,9 +60,41 @@ def _check_function(
     return errors
 
 
+def _unknown(rule_cause: str, rel: str, node: ast.stmt, suggestion: str) -> Error:
+    return _error("AIF006", rel, node.lineno, rule_cause, suggestion)
+
+
+def _check_project_import(
+    node: ast.Import | ast.ImportFrom, rel: str, importer: str, is_pkg: bool, cfg: Config, index: dict[str, Any]
+) -> list[Error]:
+    """AIF006 for `from x import y` (absolute or relative) and `import x.y` of project modules."""
+    errors: list[Error] = []
+    if isinstance(node, ast.Import):
+        for a in node.names:
+            if a.name.split(".")[0] in cfg.source_dirs and a.name not in index:
+                errors.append(_unknown(f"unknown module: {a.name}", rel, node, f"existing modules: {sorted(index)}"))
+        return errors
+    module = resolve_from(importer, is_pkg, node)
+    if module is None:
+        return [_unknown("relative import goes beyond the project root", rel, node, "use an absolute import")]
+    if module.split(".")[0] not in cfg.source_dirs:
+        return errors
+    if module not in index:
+        return [_unknown(f"unknown module: {module}", rel, node, f"existing modules: {sorted(index)}")]
+    for a in node.names:
+        if a.name not in index[module] and f"{module}.{a.name}" not in index:
+            errors.append(
+                _unknown(f"unknown symbol: {module}.{a.name}", rel, node, f"available symbols: {sorted(index[module])}")
+            )
+    return errors
+
+
 def _check_import(
     node: ast.Import | ast.ImportFrom, rel: str, cfg: Config, pure: bool, index: dict[str, Any]
 ) -> list[Error]:
+    importer = rel.removesuffix(".py").replace("/", ".")
+    is_pkg = importer.endswith(".__init__")
+    importer = importer.removesuffix(".__init__")
     errors: list[Error] = []
     mods = [a.name for a in node.names] if isinstance(node, ast.Import) else [node.module or ""]
     for m in mods:
@@ -76,26 +108,7 @@ def _check_import(
                     "receive the effect through an injected port (ports/)",
                 )
             )
-    if isinstance(node, ast.ImportFrom) and node.module and node.module.split(".")[0] in cfg.source_dirs:
-        if node.module not in index:
-            errors.append(
-                _error(
-                    "AIF006", rel, node.lineno, f"unknown module: {node.module}", f"existing modules: {sorted(index)}"
-                )
-            )
-        else:
-            for a in node.names:
-                if a.name not in index[node.module]:
-                    errors.append(
-                        _error(
-                            "AIF006",
-                            rel,
-                            node.lineno,
-                            f"unknown symbol: {node.module}.{a.name}",
-                            f"available symbols: {sorted(index[node.module])}",
-                        )
-                    )
-    return errors
+    return errors + _check_project_import(node, rel, importer, is_pkg, cfg, index)
 
 
 def _known_classes(tree: ast.Module, index: dict[str, Any], cfg: Config) -> dict[str, dict[str, Any]]:

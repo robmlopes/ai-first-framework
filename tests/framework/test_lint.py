@@ -114,3 +114,47 @@ def test_aif012_across_modules(project):
     project.write("adapters/a.py", "class A:\n    def run(self) -> None: ...\n")
     project.write("adapters/b.py", "from adapters.a import A\n\nx = A.stop\n")
     assert project.rules(run(project)) == ["AIF012"]
+
+
+def test_aif006_relative_import_unknown_symbol(project):
+    project.write("domain/m.py", GOOD)
+    project.write("domain/n.py", "from .m import g\n")
+    errors = run(project)
+    assert project.rules(errors) == ["AIF006"] and "domain.m.g" in errors[0]["cause"]
+
+
+def test_aif006_relative_import_known_symbol_ok(project):
+    project.write("domain/m.py", GOOD)
+    project.write("domain/n.py", "from .m import f\nfrom . import m\n")
+    assert run(project) == []
+
+
+def test_aif006_relative_import_unknown_module(project):
+    project.write("domain/n.py", "from .nope import f\n")
+    assert project.rules(run(project)) == ["AIF006"]
+
+
+def test_aif006_relative_from_package_init(project):
+    project.write("adapters/sub/__init__.py", "from .impl import Thing\n")
+    project.write("adapters/sub/impl.py", "class Thing: ...\n")
+    assert run(project) == []
+    project.write("adapters/sub/__init__.py", "from .impl import Other\n")
+    assert project.rules(run(project)) == ["AIF006"]
+
+
+def test_aif006_relative_beyond_root(project):
+    project.write("domain/n.py", "from ... import x\n")
+    assert project.rules(run(project)) == ["AIF006"]
+
+
+def test_aif006_import_dotted_module(project):
+    project.write("domain/m.py", GOOD)
+    project.write("adapters/a.py", "import domain.m\nimport domain.nope\n")
+    errors = run(project)
+    assert project.rules(errors) == ["AIF006"] and "domain.nope" in errors[0]["cause"]
+
+
+def test_aif001_relative_forbidden_not_confused(project):
+    project.write("domain/os.py", "")
+    project.write("domain/n.py", "from . import os\n")
+    assert run(project) == []

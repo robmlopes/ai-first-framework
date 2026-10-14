@@ -34,7 +34,8 @@ def test_check_lint_error_stops_before_tests(project, capsys):
     project.write("tests/test_x.py", "def test_x():\n    assert False\n")
     code, out = run_check(project, capsys)
     assert code == 1
-    assert {e["stage"] for e in out["errors"]} == {"lint"}
+    assert {e["stage"] for e in out["errors"]} <= {"lint", "effects"}
+    assert "lint" in {e["stage"] for e in out["errors"]}
 
 
 def test_check_reports_contract_counterexample(project, capsys):

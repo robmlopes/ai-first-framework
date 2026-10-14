@@ -15,8 +15,8 @@ pure_dirs = ["domain"]
 port_dirs = ["ports"]
 max_file_lines = 200
 max_function_lines = 40
-forbidden_imports = ["os", "sqlite3", "requests"]
-forbidden_calls = ["open", "print"]
+forbidden_imports = ["builtins", "os", "sqlite3", "requests"]
+forbidden_calls = ["open", "print", "getattr"]
 
 [aif.capabilities]
 DbWrite = ["db.write"]

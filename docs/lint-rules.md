@@ -9,11 +9,11 @@ Every error is a dict: `{"stage", "rule", "file", "line", "cause", "suggestion"}
 | AIF003 | lint | all | Missing parameter or return type hints | Annotate everything |
 | AIF004 | lint | all | Bare `except:` or `except Exception` | Catch a specific error |
 | AIF005 | lint | all | File longer than `max_file_lines` or function longer than `max_function_lines` | Split |
-| AIF006 | lint | all | `from <project module> import <symbol>` not present in the index | Use a name from the suggestion list |
+| AIF006 | lint | all | `from x import y` (absolute or relative) or `import x.y` of a project module/symbol not present in the index; relative imports that climb past the root | Use a name from the suggestion list |
 | AIF007 | lint | all | Use of `global` | Pass state as a parameter |
 | AIF008 | effects | contracts | Declared effect not defined in `[aif.capabilities]` | Use a valid effect |
-| AIF009 | effects | contracts | Effects and received capabilities do not match | Align `effects=` with parameters |
-| AIF010 | effects | `pure_dirs` | Direct call of a name in `forbidden_calls` (`open`, `print`...) | Use an injected port |
+| AIF009 | effects | contracts | Effects and received capabilities do not match. Capabilities are recognised through import aliases (`as`), module aliases, simple assignments, unions, generics and quoted annotations | Align `effects=` with parameters |
+| AIF010 | effects | `pure_dirs` | Direct call of a name in `forbidden_calls` (`open`, `getattr`...), including `builtins.open()`, aliases (`reader = open`) and calls into forbidden modules (`os.getcwd()`, `from os import getcwd as g`) | Use an injected port |
 | AIF011 | effects | `pure_dirs` | Domain imports an effects layer, or reaches I/O through a port module | Invert the dependency |
 | AIF012 | lint | all | `Class.member` where `Class` is a project class and `member` is not one of its methods or attributes | Use a name from the suggestion list |
 

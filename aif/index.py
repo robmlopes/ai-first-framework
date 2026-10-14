@@ -66,6 +66,22 @@ def module_of(root: Path, file: Path) -> str:
     return ".".join(rel.parts[:-1] if rel.name == "__init__" else rel.parts)
 
 
+def resolve_from(importer: str, is_package: bool, node: ast.ImportFrom) -> str | None:
+    """Absolute module named by `from ... import`, resolving relative levels; None if it climbs past the root."""
+    if node.level == 0:
+        return node.module
+    parts = importer.split(".")
+    if not is_package:
+        parts = parts[:-1]
+    keep = len(parts) - (node.level - 1)
+    if keep < 0:
+        return None
+    base = parts[:keep]
+    if node.module:
+        base.append(node.module)
+    return ".".join(base) or None
+
+
 def generate(root: Path, cfg: Config) -> dict[str, Any]:
     index: dict[str, Any] = {}
     for file in source_files(root, cfg):
