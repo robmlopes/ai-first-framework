@@ -36,7 +36,7 @@ def test_project_and_framework_allowed(project: Project) -> None:
 
 
 def test_aif014_undeclared_package(project: Project) -> None:
-    errors = run(project, "import requests\n")
+    errors = run(project, "import some_undeclared_pkg\n")
     assert [e["rule"] for e in errors] == ["AIF014"]
     assert "third_party" in errors[0]["suggestion"]
 
@@ -46,7 +46,7 @@ def test_aif014_nonexistent_package(project: Project) -> None:
 
 
 def test_declared_package_ok(project: Project) -> None:
-    assert rules(project, "import yaml\n", '["yaml"]') == []
+    assert rules(project, "import hypothesis\n", '["hypothesis"]') == []
 
 
 def test_aif014_declared_but_not_installed(project: Project) -> None:
@@ -55,13 +55,13 @@ def test_aif014_declared_but_not_installed(project: Project) -> None:
 
 
 def test_aif015_unknown_name_in_installed_package(project: Project) -> None:
-    errors = run(project, "from yaml import safe_load, safe_lod\n", '["yaml"]')
-    assert [e["rule"] for e in errors] == ["AIF015"] and "yaml.safe_lod" in errors[0]["cause"]
-    assert "safe_load" in errors[0]["suggestion"]
+    errors = run(project, "from hypothesis import given, giv\n", '["hypothesis"]')
+    assert [e["rule"] for e in errors] == ["AIF015"] and "hypothesis.giv" in errors[0]["cause"]
+    assert "given" in errors[0]["suggestion"]
 
 
 def test_aif015_known_names_ok(project: Project) -> None:
-    assert rules(project, "from yaml import safe_load, dump, YAMLError\n", '["yaml"]') == []
+    assert rules(project, "from hypothesis import given, settings, HealthCheck\n", '["hypothesis"]') == []
     assert rules(project, "from hypothesis import given, strategies, settings\n", '["hypothesis"]') == []
 
 
@@ -109,7 +109,7 @@ def test_star_import_of_stdlib_not_flagged(project: Project) -> None:
 
 def test_can_be_disabled(project: Project) -> None:
     set_options(project, check_third_party="false")
-    project.write("adapters/a.py", "import requests\nimport nothing_at_all\n")
+    project.write("adapters/a.py", "import some_undeclared_pkg\nimport nothing_at_all\n")
     assert [e for e in lint.run(project.root, project.cfg) if e["rule"].startswith("AIF01")] == []
 
 
