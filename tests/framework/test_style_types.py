@@ -1,0 +1,50 @@
+from __future__ import annotations
+
+from aif import style, types
+
+
+def test_style_clean(project):
+    project.write("adapters/a.py", "x = 1\n")
+    assert style.run(project.root, project.cfg) == []
+
+
+def test_style_reports_format_and_ruff_codes(project):
+    project.write("adapters/a.py", "import os\nx   =  1\n")
+    rules = project.rules(style.run(project.root, project.cfg))
+    assert "format" in rules and "F401" in rules
+
+
+def test_fix_repairs_what_it_can(project):
+    project.write("adapters/a.py", "import os\nx   =  1\n")
+    out = style.fix(project.root, project.cfg)
+    assert out["ok"], out
+    assert (project.root / "adapters/a.py").read_text() == "x = 1\n"
+
+
+def test_style_can_be_disabled(project):
+    project.write("aif.toml", (project.root / "aif.toml").read_text().replace("[aif]\n", "[aif]\nstyle = false\n"))
+    project.write("adapters/a.py", "x   =  1\n")
+    assert style.run(project.root, project.cfg) == []
+
+
+def test_types_clean(project):
+    project.write("adapters/a.py", "def f(x: int) -> int:\n    return x\n")
+    assert types.run(project.root, project.cfg) == []
+
+
+def test_types_reports_mismatch_with_hint(project):
+    project.write("adapters/a.py", 'def f(x: int) -> int:\n    return "s"\n')
+    errors = types.run(project.root, project.cfg)
+    assert [e["rule"] for e in errors] == ["return-value"]
+    assert errors[0]["line"] == 2 and errors[0]["suggestion"]
+
+
+def test_types_checks_adapter_against_port(project):
+    project.write(
+        "adapters/a.py",
+        "from ports.db import DbWrite\n\n\nclass Good:\n    def save(self, value: int) -> None: ...\n\n\n"
+        "class Bad:\n    def store(self, value: int) -> None: ...\n\n\n"
+        "def ok(x: Good) -> DbWrite:\n    return x\n\n\ndef bad(x: Bad) -> DbWrite:\n    return x\n",
+    )
+    errors = types.run(project.root, project.cfg)
+    assert [e["line"] for e in errors] == [17]
