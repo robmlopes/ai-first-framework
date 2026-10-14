@@ -31,6 +31,7 @@ project/
 │   ├── fuzz.py               # contract fuzzing (CON001-CON005)
 │   ├── scaffold.py           # `aif init`
 │   ├── templates/            # files copied by `aif init` (hooks mirror scripts/)
+│   ├── bounds.py             # integer ranges inferred from `requires`, used by fuzz
 │   ├── effects.py            # rules AIF008-AIF011
 │   └── patch.py              # `aif patch`: replace one function/class with rollback
 ├── domain/                   # pure logic
@@ -63,6 +64,7 @@ project/
 | `aif.thirdparty` | `Resolver`, `check` | Locates packages without importing and reads their namespaces |
 | `aif.fuzz` | `run` | Property-checks every `@contract(ensures=...)` from type hints |
 | `aif.scaffold` | `init` | Creates a new AIF project from `aif/templates/` |
+| `aif.bounds` | `infer` | Reads simple numeric comparisons from a `requires` lambda |
 | `aif.effects` | `run` | Capability/effect matching, direct I/O calls, import graph |
 | `aif.config` | `Config`, `load` | Reads `[aif]` from `aif.toml` |
 | `aif.agents` | `render`, `stale`, `write` | Generates agent instruction files from `.aif/protocol.md` |

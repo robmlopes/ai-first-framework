@@ -77,10 +77,17 @@ def test_explicit_strategies_override_hints(project: Project) -> None:
     assert run(project, src) == []
 
 
-def test_strategies_make_narrow_requires_testable(project: Project) -> None:
-    # without strategies this requires is too narrow to hit by chance (CON004)
+def test_narrow_requires_is_now_reachable_through_inferred_bounds(project: Project) -> None:
     narrow = "@contract(requires=lambda x: x == 123456, ensures=lambda r: True)\ndef f(x: int) -> int:\n    return x\n"
-    assert rules(project, narrow) == ["CON004"]
+    assert rules(project, narrow) == []
+
+
+def test_con004_when_bounds_cannot_be_inferred(project: Project) -> None:
+    src = (
+        "@contract(requires=lambda s: s == 'unlikely-value', ensures=lambda r: True)\n"
+        "def f(s: str) -> str:\n    return s\n"
+    )
+    assert rules(project, src) == ["CON004"]
 
 
 def test_functions_with_effects_are_skipped(project: Project) -> None:

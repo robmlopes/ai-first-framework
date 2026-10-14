@@ -1,9 +1,11 @@
-__pycache__/
+*.egg-info/
 *.pyc
+.aif/index.json
 .hypothesis/
 .mypy_cache/
-.ruff_cache/
 .pytest_cache/
+.ruff_cache/
 .venv/
-*.egg-info/
-.aif/index.json
+__pycache__/
+build/
+dist/

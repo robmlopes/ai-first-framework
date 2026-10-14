@@ -14,9 +14,10 @@ import inspect
 import json
 import os
 from collections.abc import Callable
-from typing import Any
+from typing import Any, TypeVar
 
 Predicate = Callable[..., bool]
+F = TypeVar("F", bound=Callable[..., Any])
 
 
 class ContractViolation(AssertionError):
@@ -44,8 +45,8 @@ def contract(
     ensures: Predicate | None = None,
     effects: list[str] | tuple[str, ...] = (),
     strategies: dict[str, Any] | None = None,
-) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
-    def decorator(fn: Callable[..., Any]) -> Callable[..., Any]:
+) -> Callable[[F], F]:
+    def decorator(fn: F) -> F:
         signature = inspect.signature(fn)
         name = f"{fn.__module__}.{fn.__qualname__}"
 
@@ -69,6 +70,6 @@ def contract(
             "ensures": ensures,
             "strategies": dict(strategies or {}),
         }
-        return wrapper
+        return wrapper  # type: ignore[return-value]
 
     return decorator

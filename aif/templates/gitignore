@@ -7,3 +7,5 @@ __pycache__/
 .venv/
 *.egg-info/
 .aif/index.json
+build/
+dist/

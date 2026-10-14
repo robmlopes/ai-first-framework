@@ -42,6 +42,10 @@ The effect `db.write` is granted by the `DbWrite` capability type (see `[aif.cap
 - Property tests (Hypothesis) exercise contracts; a contract never run by a test proves nothing.
 - A wrong contract produces "correct" code that does the wrong thing: review contracts as carefully as code.
 
+## Typing of `@contract`
+
+`contract` is generic over the decorated function (`F -> F`), so decorated functions keep their signature for mypy, and the package ships `py.typed`, so projects that install `aif` get `mypy --strict` without `Untyped decorator` errors.
+
 ## Automatic contract fuzzing (`aif fuzz` stage)
 
 Contracts are no longer only as strong as the tests that happen to call them. After lint and types pass, `aif check` property-tests **every** `@contract(ensures=...)` in `source_dirs`:
@@ -60,6 +64,10 @@ Rules (`stage: "fuzz"`):
 | CON003 | Inputs cannot be generated (unannotated parameter, unsupported type) | Annotate, or pass `strategies=` |
 | CON004 | `requires` rejected (almost) every input | Relax `requires` or pass `strategies=` |
 | CON005 | The fuzz worker itself failed (e.g. a module cannot be imported) | Fix the import error shown |
+
+### Ranges inferred from `requires`
+
+Integer and float parameters are narrowed automatically from simple comparisons in `requires` joined by `and`: `price >= 0 and 0 <= percent <= 100` generates `price` in `[0, inf)` and `percent` in `[0, 100]`, and `x == 123456` hits that value every time. Strict bounds are tightened (`x > 5` becomes `x >= 6`). Anything else (`or`, `len(s) > 0`, comparisons between parameters) is ignored: the predicate still filters afterwards, and `strategies=` can override. A contradictory range such as `x > 5 and x < 3` is reported as CON004.
 
 ### Controlling the input space
 

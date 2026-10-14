@@ -1,5 +1,10 @@
 from __future__ import annotations
 
+from pathlib import Path
+
+import pytest
+
+import aif
 from aif import style, types
 from tests.framework.conftest import Project
 
@@ -63,3 +68,16 @@ def test_typecheck_tests_can_be_disabled(project: Project) -> None:
     )
     project.write("tests/test_x.py", "def test_x(a) -> None:\n    pass\n")
     assert types.run(project.root, project.cfg) == []
+
+
+def test_framework_path_added_only_for_source_checkout(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    from aif import types as aif_types
+
+    fake = tmp_path / "site-packages" / "aif"
+    fake.mkdir(parents=True)
+    monkeypatch.setattr(aif, "__file__", str(fake / "__init__.py"))
+    assert aif_types._framework_path() == []  # installed: mypy finds it, and rejects site-packages in MYPYPATH
+    checkout = tmp_path / "src" / "aif"
+    checkout.mkdir(parents=True)
+    monkeypatch.setattr(aif, "__file__", str(checkout / "__init__.py"))
+    assert aif_types._framework_path() == [str(checkout.parent)]

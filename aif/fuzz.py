@@ -1,14 +1,16 @@
 """Contract fuzzing: checks every `@contract(ensures=...)` against generated inputs, without hand-written tests.
 
-Inputs come from the type hints (Hypothesis `from_type`, finite numbers by default), from `strategies=` on the
-contract, or from types registered by the `fuzz_setup` module (domain-specific input spaces).
-Inputs that violate `requires` are discarded. Functions with declared effects are skipped (they need real ports).
+Inputs come from the type hints (Hypothesis `from_type`, finite numbers by default), narrowed by the integer
+ranges that `requires` states (see `aif.bounds`). A `strategies=` mapping on the contract, or types registered
+by the `fuzz_setup` module, override that. Inputs that violate `requires` are discarded. Functions with declared
+effects are skipped (they need real ports).
 Runs in a subprocess so a crashing or noisy module cannot corrupt the caller. Rules:
 
 CON001  `ensures` failed for inputs that satisfy `requires` (counterexample included)
 CON002  the function raised for inputs that satisfy `requires`
 CON003  inputs cannot be generated from the type hints
 CON004  `requires` rejects (almost) every generated input, so the contract is untestable or contradictory
+CON005  the fuzz worker itself failed (e.g. a module cannot be imported)
 """
 
 from __future__ import annotations
@@ -24,6 +26,7 @@ import typing
 from pathlib import Path
 from typing import Any
 
+from aif.bounds import infer as bounds_of
 from aif.config import Config
 from aif.index import module_of, source_files
 
@@ -91,10 +94,18 @@ def _targets(modules: list[str]) -> list[tuple[str, Any]]:
     return out
 
 
-def _strategy(hint: Any, override: Any) -> Any:
+def _strategy(hint: Any, override: Any, bound: Any = None) -> Any:
     from hypothesis import strategies as st
 
-    return override if override is not None else st.from_type(hint)
+    if override is not None:
+        return override
+    if bound is not None and hint is int:
+        return st.integers(min_value=bound[0], max_value=bound[1])
+    if bound is not None and hint is float:
+        low = None if bound[0] is None else float(bound[0])
+        high = None if bound[1] is None else float(bound[1])
+        return st.floats(min_value=low, max_value=high, allow_nan=False, allow_infinity=False)
+    return st.from_type(hint)
 
 
 def _check(name: str, fn: Any, examples: int) -> list[Error]:
@@ -113,8 +124,9 @@ def _check(name: str, fn: Any, examples: int) -> list[Error]:
     try:
         if missing:
             raise TypeError(f"no type hint for {missing}")
+        bounds = bounds_of(meta["requires"])
         strategy = st.fixed_dictionaries(
-            {p.name: _strategy(hints[p.name], meta["strategies"].get(p.name)) for p in params}
+            {p.name: _strategy(hints[p.name], meta["strategies"].get(p.name), bounds.get(p.name)) for p in params}
         )
     except Exception as exc:
         return [

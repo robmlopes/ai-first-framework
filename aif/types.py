@@ -54,6 +54,16 @@ def _parse(output: str) -> list[Error]:
     return errors
 
 
+def _framework_path() -> list[str]:
+    """Directory that makes `aif` importable for mypy when it runs from a source checkout.
+
+    When `aif` is installed (site-packages/dist-packages) mypy already finds it, and mypy refuses a
+    MYPYPATH that points into site-packages, so nothing is added in that case.
+    """
+    parent = Path(aif.__file__).resolve().parent.parent
+    return [] if parent.name in {"site-packages", "dist-packages"} else [str(parent)]
+
+
 def run(root: Path, cfg: Config) -> list[Error]:
     if not cfg.typecheck:
         return []
@@ -69,8 +79,10 @@ def run(root: Path, cfg: Config) -> list[Error]:
         "--no-color-output",
         *dirs,
     ]
-    framework = str(Path(aif.__file__).resolve().parent.parent)
-    env = {**os.environ, "MYPYPATH": os.pathsep.join(filter(None, [framework, os.environ.get("MYPYPATH", "")]))}
+    env = {
+        **os.environ,
+        "MYPYPATH": os.pathsep.join(filter(None, [*_framework_path(), os.environ.get("MYPYPATH", "")])),
+    }
     proc = subprocess.run(cmd, cwd=root, capture_output=True, text=True, env=env)
     errors = _parse(proc.stdout)
     if proc.returncode not in (0, 1) or (proc.returncode == 1 and not errors):
