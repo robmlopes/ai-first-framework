@@ -2,6 +2,7 @@
 
 ```
 project/
+├── .github/workflows/aif.yml # CI
 ├── aif.toml                  # rules, limits, allowed capabilities
 ├── CLAUDE.md                 # agent protocol (instructions file)
 ├── pyproject.toml            # packaging and pytest config
@@ -30,9 +31,12 @@ project/
 │   └── sqlite_db.py          # example: SqliteDb implements DbWrite
 ├── tests/
 │   ├── test_transfer.py      # property test with Hypothesis
+│   ├── framework/            # tests of the framework itself
 │   └── test_sqlite_db.py     # adapter roundtrip + end-to-end domain -> port -> adapter
 ├── scripts/
-│   └── commit-msg            # git hook: require `Intent: <id>` trailer
+│   ├── commit-msg            # git hook: Intent trailer + Scope check
+│   ├── pre-commit            # git hook: aif check
+│   └── install-hooks.sh      # copies the hooks into .git/hooks
 └── docs/                     # this documentation
 ```
 

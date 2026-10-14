@@ -1,7 +1,7 @@
 # CLI
 
 ```
-python -m aif <command> [--json] [--root PATH]
+aif <command> [--json] [--root PATH]      # same as: python -m aif ...
 ```
 
 | Command | Action |
@@ -131,5 +131,6 @@ Intents live in `.aif/intents/<id>.md` (kebab-case id). Required format:
 | INT003 | A path in `Scope` does not exist |
 | INT004 | Commit message has no `Intent: <id>` trailer |
 | INT005 | Commit trailer names an unknown intent |
+| INT006 | A staged file is not listed in the cited intent's `Scope` (docs/, tests/, `.aif/`, root files and empty `__init__.py` are exempt) |
 
-Intent errors use `"stage": "intents"`. `aif check` validates all intents (INT001-INT003); INT004/INT005 apply to commit messages via `scripts/commit-msg`, which you install as a git `commit-msg` hook.
+Intent errors use `"stage": "intents"`. `aif check` validates all intents (INT001-INT003); INT004-INT006 apply to commit messages via `scripts/commit-msg`, which you install as a git `commit-msg` hook.

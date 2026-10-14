@@ -12,12 +12,14 @@ AIF (AI-First Framework) is a set of conventions and tools that keeps an existin
 | [configuration.md](configuration.md) | `aif.toml` reference |
 | [agent-protocol.md](agent-protocol.md) | The loop an AI agent must follow |
 | [conventions.md](conventions.md) | Language and naming standards (English everywhere) |
+| [workflow.md](workflow.md) | Git hooks, CI, framework tests, intent scope |
 | [limitations.md](limitations.md) | Known limits and roadmap |
 
 ## Quick start
 
 ```bash
-pip install pytest hypothesis mypy ruff   # Python 3.11+
-python -m aif index                # writes .aif/index.json
-python -m aif check --json         # full verification, structured output
+pip install -e ".[dev]"           # Python 3.11+; installs the `aif` command
+aif index                          # writes .aif/index.json
+aif check --json                   # full verification, structured output
+sh scripts/install-hooks.sh        # git hooks: pre-commit + commit-msg
 ```

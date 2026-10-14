@@ -7,7 +7,7 @@ The same text lives in `CLAUDE.md` at the project root.
 3. Prefer `aif patch FILE SYMBOL` (or `Class.method`) over rewriting whole files. Write the contract and tests first, then the implementation.
 4. Run `python -m aif check --json`.
 5. Fix from the diagnostics: use `counterexample` and `suggestion`. Maximum 5 attempts, then stop and report the blocker.
-6. Commit one atomic change with an `Intent: <id>` trailer in the message (enforced by `scripts/commit-msg`).
+6. Commit one atomic change with an `Intent: <id>` trailer in the message (enforced by `scripts/commit-msg`, which also rejects staged files outside the intent's `Scope`).
 
 ## Placement guide
 

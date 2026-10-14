@@ -1,9 +1,10 @@
 # AIF framework tooling
 
 ## Why
-The framework itself (CLI, lint rules, hooks, packaging) evolves under its own intent so every commit stays traceable.
+The framework itself (CLI, lint rules, hooks, CI, packaging) evolves under its own intent so every commit stays traceable.
 
 ## Scope
+- .github/workflows/aif.yml
 - .gitignore
 - CLAUDE.md
 - aif.toml
@@ -25,5 +26,5 @@ The framework itself (CLI, lint rules, hooks, packaging) evolves under its own i
 - scripts/pre-commit
 
 ## Acceptance
-- `python -m aif check --json` returns ok.
+- `aif check --json` returns ok.
 - Framework tests in tests/framework pass.

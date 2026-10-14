@@ -18,6 +18,7 @@
 ## Roadmap
 1. ~~`aif patch`~~ (done, including methods).
 2. ~~SQLite adapter example~~ (done: `adapters/sqlite_db.py`).
-3. ~~`.aif/intents/` support~~ (done). Next: verify that changed files in a commit fall inside the intent's `Scope`.
+3. ~~`.aif/intents/` support~~ (done, including the Scope check at commit time, INT006).
 4. ~~Ruff and mypy stages~~ (done; pyright not supported).
-5. ~~Method-level indexing~~ (done). `Class.member` references are validated (AIF012). Next: relative-import resolution.
+5. ~~Git hooks, CI, framework tests, `aif` entry point~~ (done).
+6. ~~Method-level indexing~~ (done). `Class.member` references are validated (AIF012). Next: relative-import resolution.
