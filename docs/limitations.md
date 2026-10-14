@@ -17,7 +17,7 @@
 
 ## Roadmap
 
-Out of scope: TypeScript port of the framework (separate project). Open: pyright support, LICENSE and release process.
+Out of scope: TypeScript port of the framework (separate project). Open: pyright support and a release process.
 
 1. ~~`aif patch`~~ (done, including methods).
 2. ~~SQLite adapter example~~ (done: `adapters/sqlite_db.py`).

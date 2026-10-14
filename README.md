@@ -66,6 +66,10 @@ In this repository: `sh scripts/install-hooks.sh` installs the git hooks, and `a
 
 Full documentation is in [docs/](docs/README.md): architecture, project structure, contracts, every lint rule (AIF001-AIF015, CON001-CON005, INT001-INT006, AGT001), CLI, configuration, agent protocol, workflow and known limitations.
 
+## License
+
+[The Unlicense](LICENSE): public domain, use it for anything without conditions.
+
 ## Honest limits
 
 AIF raises the cost of mistakes; it does not prove correctness. Contracts are sampled, not proved; analysis skips what it cannot infer rather than guessing; the CI workflow has not run on a remote yet. See [docs/limitations.md](docs/limitations.md).
