@@ -1,9 +1,10 @@
 #!/bin/sh
 # Install with: sh scripts/install-hooks.sh
 # Blocks commits while `aif check` fails.
-PY="${PYTHON:-python3}"
-OUT=$("$PY" -m aif check --json) || {
+# Uses the `aif` command when it is on PATH (venv or global install), else `python3 -m aif`.
+if command -v aif >/dev/null 2>&1; then AIF="aif"; else AIF="${PYTHON:-python3} -m aif"; fi
+OUT=$($AIF check --json) || {
   echo "$OUT" >&2
-  echo "aif check failed: fix the errors above (or run 'python -m aif fix')." >&2
+  echo "aif check failed: fix the errors above (or run 'aif fix')." >&2
   exit 1
 }

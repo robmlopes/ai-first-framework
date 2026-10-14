@@ -2,8 +2,9 @@
 # Install with: sh scripts/install-hooks.sh
 # Rejects commits that lack an 'Intent: <id>' trailer, name an unknown intent,
 # or stage source files outside the intent's Scope.
-PY="${PYTHON:-python3}"
-OUT=$("$PY" -m aif intent commit-msg "$1") || {
+# Uses the `aif` command when it is on PATH (venv or global install), else `python3 -m aif`.
+if command -v aif >/dev/null 2>&1; then AIF="aif"; else AIF="${PYTHON:-python3} -m aif"; fi
+OUT=$($AIF intent commit-msg "$1") || {
   echo "$OUT" >&2
   exit 1
 }

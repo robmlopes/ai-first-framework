@@ -4,6 +4,7 @@ AIF (AI-First Framework) is a set of conventions and tools that keeps an existin
 
 | Document | Content |
 |---|---|
+| [getting-started.md](getting-started.md) | Install AIF and build your first project, step by step |
 | [architecture.md](architecture.md) | Principles, layers (domain / ports / adapters), dependency rules |
 | [project-structure.md](project-structure.md) | Directory tree and what each file does |
 | [contracts.md](contracts.md) | The `@contract` decorator, effects and capabilities |
@@ -18,9 +19,8 @@ AIF (AI-First Framework) is a set of conventions and tools that keeps an existin
 ## Quick start
 
 ```bash
-pip install -e ".[dev]"           # Python 3.11+; installs the `aif` command
-aif init my-project                # or start a new project that already passes `aif check`
-aif index                          # writes .aif/index.json
+pip install "git+https://github.com/robmlopes/ai-first-framework.git"   # Python 3.11+
+aif init my-project                # new project that already passes `aif check`
+cd my-project && pip install -e ".[dev]"
 aif check --json                   # full verification, structured output
-sh scripts/install-hooks.sh        # git hooks: pre-commit + commit-msg
 ```

@@ -39,15 +39,33 @@ def transfer(source: Account, target: Account, amount: Decimal) -> TransferResul
 
 ## Quick start
 
+Requires Python 3.11+ and git. AIF is not on PyPI yet, so install it from GitHub:
+
 ```bash
-pip install -e ".[dev]"            # Python 3.11+, installs the `aif` command
-aif init my-project                # new project that already passes `aif check`
-cd my-project
+python3 -m venv .venv && source .venv/bin/activate
+pip install "git+https://github.com/robmlopes/ai-first-framework.git"
+
+aif init my-app                    # new project that already passes `aif check`
+cd my-app
+pip install -e ".[dev]"            # pytest, hypothesis, mypy, ruff
+aif check --json                   # expected: {"ok": true, "errors": []}
+
+git add -A && git commit -m "chore: bootstrap
+
+Intent: bootstrap"                 # hooks require the Intent trailer
 aif intent new my-feature "What and why"
-aif check --json                   # full verification
 ```
 
-In this repository: `sh scripts/install-hooks.sh` installs the git hooks, and `aif check --json` verifies the example (money transfer with a SQLite adapter) plus the framework itself.
+The full walkthrough (first feature, effects and ports, using an AI agent, troubleshooting) is in [docs/getting-started.md](docs/getting-started.md).
+
+### Working on the framework itself
+
+```bash
+git clone https://github.com/robmlopes/ai-first-framework.git && cd ai-first-framework
+pip install -e ".[dev]"
+sh scripts/install-hooks.sh        # git hooks: pre-commit + commit-msg
+aif check --json                   # verifies the example (money transfer, SQLite adapter) and the framework itself
+```
 
 ## Commands
 
