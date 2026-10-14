@@ -14,7 +14,7 @@ All keys live under `[aif]`. Unknown keys are ignored; missing keys use defaults
 | `typecheck` | `true` | Run mypy over `source_dirs` as a pipeline stage |
 | `mypy_args` | `["--strict"]` | Extra mypy arguments |
 | `forbidden_imports` | `[]` | Top-level modules banned in `pure_dirs` (AIF001) and treated as I/O by AIF011 |
-| `forbidden_calls` | `open, print, input, exec, eval, __import__` | Builtins banned in `pure_dirs` (AIF010) |
+| `forbidden_calls` | `open, print, input, exec, eval, compile, __import__, getattr, setattr` | Names banned in `pure_dirs` (AIF010), also when reached via `builtins.` or an alias |
 
 ## `[aif.capabilities]`
 
