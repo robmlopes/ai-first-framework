@@ -27,6 +27,7 @@ project/
 │   ├── dynamic.py            # AIF010 references and AIF013 dynamic dispatch
 │   ├── model.py              # project model: classes, imports, type resolution
 │   ├── members.py            # AIF012 member checks (classes and instances)
+│   ├── thirdparty.py         # AIF014/AIF015 third-party and stdlib import validation
 │   ├── effects.py            # rules AIF008-AIF011
 │   └── patch.py              # `aif patch`: replace one function/class with rollback
 ├── domain/                   # pure logic
@@ -56,6 +57,7 @@ project/
 | `aif.model` | `Model` | Project-wide class/function model with import and type resolution |
 | `aif.members` | `check_module` | AIF012 for classes and inferred instances |
 | `aif.dynamic` | `banned_references`, `dynamic_calls` | AIF010 references and AIF013 |
+| `aif.thirdparty` | `Resolver`, `check` | Locates packages without importing and reads their namespaces |
 | `aif.effects` | `run` | Capability/effect matching, direct I/O calls, import graph |
 | `aif.config` | `Config`, `load` | Reads `[aif]` from `aif.toml` |
 | `aif.agents` | `render`, `stale`, `write` | Generates agent instruction files from `.aif/protocol.md` |

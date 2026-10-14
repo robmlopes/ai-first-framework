@@ -13,6 +13,8 @@ All keys live under `[aif]`. Unknown keys are ignored; missing keys use defaults
 | `style` | `true` | Run ruff format check + ruff check over `source_dirs` and `tests` |
 | `typecheck` | `true` | Run mypy over `source_dirs` as a pipeline stage |
 | `typecheck_tests` | `true` | Also type-check `tests/` |
+| `third_party` | `[]` | Top-level import names of third-party packages that `source_dirs` may import (AIF014) |
+| `check_third_party` | `true` | Enable AIF014/AIF015 |
 | `mypy_args` | `["--strict"]` | Extra mypy arguments |
 | `forbidden_imports` | `[]` | Top-level modules banned in `pure_dirs` (AIF001) and treated as I/O by AIF011 |
 | `forbidden_calls` | `open, print, input, exec, eval, compile, __import__, getattr, setattr` | Names banned in `pure_dirs` (AIF010), also when reached via `builtins.` or an alias |

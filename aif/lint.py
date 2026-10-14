@@ -6,7 +6,7 @@ import ast
 from pathlib import Path
 from typing import Any
 
-from aif import effects, members
+from aif import effects, members, thirdparty
 from aif.config import Config
 from aif.index import generate, module_of, resolve_from, source_files
 from aif.model import Model
@@ -112,7 +112,9 @@ def _check_import(
     return errors + _check_project_import(node, rel, importer, is_pkg, cfg, index)
 
 
-def _check_file(root: Path, file: Path, cfg: Config, index: dict[str, Any], model: Model) -> list[Error]:
+def _check_file(
+    root: Path, file: Path, cfg: Config, index: dict[str, Any], model: Model, res: thirdparty.Resolver
+) -> list[Error]:
     rel = file.relative_to(root).as_posix()
     text = file.read_text(encoding="utf-8")
     tree = ast.parse(text)
@@ -121,6 +123,7 @@ def _check_file(root: Path, file: Path, cfg: Config, index: dict[str, Any], mode
     n = len(text.splitlines())
     if n > cfg.max_file_lines:
         errors.append(_error("AIF005", rel, 1, f"file has {n} lines (max {cfg.max_file_lines})", "split the module"))
+    errors += thirdparty.check(tree, rel, res)
     errors += members.check_module(model, module_of(root, file), rel, tree)
     top = {id(f) for f in tree.body}
     for node in ast.walk(tree):
@@ -139,7 +142,8 @@ def _check_file(root: Path, file: Path, cfg: Config, index: dict[str, Any], mode
 def run(root: Path, cfg: Config) -> list[Error]:
     index = generate(root, cfg)
     model = Model(root, cfg)
+    res = thirdparty.Resolver(root, cfg)
     errors: list[Error] = []
     for file in source_files(root, cfg):
-        errors += _check_file(root, file, cfg, index, model)
+        errors += _check_file(root, file, cfg, index, model, res)
     return errors + effects.run(root, cfg)

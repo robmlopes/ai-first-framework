@@ -31,6 +31,8 @@ class Config:
             "setattr",
         ]
     )
+    third_party: list[str] = field(default_factory=list)
+    check_third_party: bool = True
     capabilities: dict[str, list[str]] = field(default_factory=dict)
 
     def layer(self, path: str) -> str:

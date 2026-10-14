@@ -26,6 +26,7 @@ The framework itself (CLI, lint rules, hooks, CI, packaging) evolves under its o
 - aif/model.py
 - aif/patch.py
 - aif/style.py
+- aif/thirdparty.py
 - aif/types.py
 - pyproject.toml
 - scripts/commit-msg

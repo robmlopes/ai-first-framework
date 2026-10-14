@@ -134,7 +134,10 @@ def test_dataclass_fields_are_members(project: Project) -> None:
 
 
 def test_unknown_decorator_makes_class_opaque(project: Project) -> None:
-    src = "from somewhere import magic\n\n\n@magic\nclass M:\n    pass\n\n\ndef f(m: M) -> None:\n    m.anything()\n"
+    src = (
+        "from functools import cache as magic\n\n\n@magic\nclass M:\n    pass\n\n\n"
+        "def f(m: M) -> None:\n    m.anything()\n"
+    )
     project.write("adapters/m.py", src)
     assert lint.run(project.root, project.cfg) == []
 

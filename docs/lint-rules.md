@@ -15,6 +15,8 @@ Every error is a dict: `{"stage", "rule", "file", "line", "cause", "suggestion"}
 | AIF009 | effects | contracts | Effects and received capabilities do not match. Capabilities are recognised through import aliases (`as`), module aliases, simple assignments, unions, generics and quoted annotations | Align `effects=` with parameters |
 | AIF010 | effects | `pure_dirs` | Direct call or **reference** (`f = open`, `map(os.path.abspath, xs)`) of a name in `forbidden_calls` (`open`, `getattr`...), including `builtins.open()`, aliases (`reader = open`) and calls into forbidden modules (`os.getcwd()`, `from os import getcwd as g`) | Use an injected port |
 | AIF013 | effects | `pure_dirs` | Dynamic dispatch: call through a name bound at runtime (`fn = pick(); fn()`), a subscript (`table[k]()`), a call result (`make()()`) or a loop variable | Call a named function or inject the behaviour as a port |
+| AIF014 | lint | all | Import of a top-level package that is not stdlib, project, the framework or declared in `third_party`; or declared but not installed | Declare it in `pyproject.toml` and `third_party`, or install it |
+| AIF015 | lint | all | `import pkg.sub` / `from pkg import name` names a module or symbol the installed package or stdlib module does not define (with "did you mean") | Use a suggested name |
 | AIF011 | effects | `pure_dirs` | Domain imports an effects layer, or reaches I/O through a port module | Invert the dependency |
 | AIF012 | lint | all | Unknown member on a project class (`Cls.x`) or on an instance whose class is inferred (`obj.x`): see below | Use a name from the suggestion list |
 
@@ -52,3 +54,15 @@ A name is trusted only when its class is certain:
 | Attribute annotation chain | `self.box.push()` (field `box: Box`) |
 
 Members include class attributes, methods, `self.x = ...` assignments in any method and inherited members (project bases). To avoid false positives the check is **skipped** when: the name is re-bound, is a loop/`with`/`except` target, or a parameter that is reassigned; the annotation is ambiguous (`A | B`) or a container (`list[X]`); the class (or any base) is not a project class, has an unknown decorator or class keyword, or defines `__getattr__`/`__getattribute__`/`__slots__`/`setattr`; or the first argument of a `classmethod`.
+
+## How AIF014/AIF015 resolve third-party imports
+
+Nothing is imported or executed. Packages are located with `importlib.machinery.PathFinder` and their public namespace is read from the source with the AST (`def`, `class`, assignments, imports, `from .x import *` followed recursively, submodule files). Skipped, never guessed:
+
+- namespaces that are dynamic (`__getattr__`, `globals()[...]`, `setattr`, star imports of non-package modules), compiled extension modules and submodules of compiled packages;
+- imports inside `try` blocks that catch `ImportError`/`Exception` (optional dependencies);
+- imports under `if sys.version_info/sys.platform/os.name/TYPE_CHECKING` branches;
+- stdlib modules that exist only on other platforms (`msvcrt`, `_winapi`);
+- relative imports (handled by AIF006).
+
+Validated against ~390 files of the stdlib, hypothesis, requests, PyYAML and pytest with zero false positives. Disable with `check_third_party = false`.
