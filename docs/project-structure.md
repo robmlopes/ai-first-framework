@@ -32,6 +32,10 @@ project/
 │   ├── scaffold.py           # `aif init`
 │   ├── templates/            # files copied by `aif init` (hooks mirror scripts/)
 │   ├── bounds.py             # integer ranges inferred from `requires`, used by fuzz
+│   ├── limits.py             # AIF005: code-line counting, per-layer limits, warnings, extraction hints
+│   ├── pipeline.py           # the `aif check` stages: changed-only mode, parallel heavy stages, timings
+│   ├── cache.py              # fuzz result cache keyed by module and its imports
+│   ├── history.py            # .aif/history.jsonl, last-check.json, `aif stats`
 │   ├── effects.py            # rules AIF008-AIF011
 │   └── patch.py              # `aif patch`: replace one function/class with rollback
 ├── domain/                   # pure logic

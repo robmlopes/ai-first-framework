@@ -22,6 +22,7 @@ LAYOUT = {
     ".aif/protocol.md": "protocol.md",
     ".aif/intents/bootstrap.md": "bootstrap-intent.md",
     "tests/strategies.py": "strategies.py.txt",
+    "ports/clock.py": "clock.py.txt",
     "scripts/pre-commit": "pre-commit",
     "scripts/commit-msg": "commit-msg",
 }

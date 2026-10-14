@@ -27,7 +27,8 @@ def run_check(project: Project, capsys: pytest.CaptureFixture[str], *extra: str)
 def test_check_ok(project: Project, capsys: pytest.CaptureFixture[str]) -> None:
     project.write("domain/m.py", GOOD)
     code, out = run_check(project, capsys)
-    assert code == 0 and out == {"ok": True, "errors": []}
+    assert code == 0 and out["ok"] is True and out["errors"] == [] and out["warnings"] == []
+    assert "total" in out["timings"]
     assert (project.root / ".aif/index.json").is_file()
 
 

@@ -11,6 +11,14 @@ class Config:
     pure_dirs: list[str] = field(default_factory=lambda: ["domain"])
     max_file_lines: int = 200
     max_function_lines: int = 40
+    limits: dict[str, dict[str, int]] = field(default_factory=dict)  # per-layer overrides: [aif.limits.web]
+    count_code_lines: bool = True  # AIF005 ignores blank lines, comments and docstrings
+    limit_warn_ratio: float = 0.9  # warn when a function or file reaches this share of its limit
+    entry_dirs: list[str] = field(default_factory=list)  # web / CLI layers; added to source_dirs
+    adapter_dirs: list[str] = field(default_factory=lambda: ["adapters"])
+    composition_roots: list[str] = field(default_factory=list)  # modules allowed to import adapters from entry_dirs
+    parallel: bool = True  # run mypy, fuzz and pytest concurrently
+    history: bool = True  # append every `aif check` to .aif/history.jsonl
     intents: bool = True
     style: bool = True
     typecheck: bool = True
@@ -35,9 +43,30 @@ class Config:
             "setattr",
         ]
     )
+    forbidden_clock: list[str] = field(
+        default_factory=lambda: [
+            "datetime.datetime.now",
+            "datetime.datetime.utcnow",
+            "datetime.datetime.today",
+            "datetime.date.today",
+            "time.time",
+            "time.time_ns",
+            "time.monotonic",
+            "time.perf_counter",
+            "time.sleep",
+        ]
+    )
     third_party: list[str] = field(default_factory=list)
     check_third_party: bool = True
     capabilities: dict[str, list[str]] = field(default_factory=dict)
+
+    def __post_init__(self) -> None:
+        self.source_dirs = [*self.source_dirs, *(d for d in self.entry_dirs if d not in self.source_dirs)]
+
+    def limit(self, path: str, key: str) -> int:
+        """Size limit for `path`: the layer override from `limits` when present, else the global value."""
+        value = self.limits.get(self.layer(path), {}).get(key)
+        return value if value is not None else int(getattr(self, key))
 
     def layer(self, path: str) -> str:
         return path.replace(".", "/").split("/")[0]

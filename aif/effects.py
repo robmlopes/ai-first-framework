@@ -162,7 +162,7 @@ def _imported_modules(tree: ast.AST, importer: str, is_pkg: bool) -> list[tuple[
     return out
 
 
-def _graph(root: Path, cfg: Config) -> Graph:
+def graph(root: Path, cfg: Config) -> Graph:
     g: Graph = {}
     for file in source_files(root, cfg):
         mod = module_of(root, file)
@@ -188,7 +188,7 @@ def _tainted(mod: str, g: Graph, cfg: Config, seen: set[str]) -> list[str] | Non
 
 
 def _layers(root: Path, cfg: Config) -> list[Error]:
-    g = _graph(root, cfg)
+    g = graph(root, cfg)
     errors: list[Error] = []
     for mod, deps in g.items():
         if cfg.layer(mod) not in cfg.pure_dirs:
@@ -220,6 +220,27 @@ def _layers(root: Path, cfg: Config) -> list[Error]:
     return errors
 
 
+def _entry_layering(root: Path, cfg: Config) -> list[Error]:
+    """AIF016: entry layers (web, CLI) reach adapters only through a composition root."""
+    g = graph(root, cfg)
+    errors: list[Error] = []
+    for mod, deps in g.items():
+        if cfg.layer(mod) not in cfg.entry_dirs or mod in cfg.composition_roots:
+            continue
+        for dep, line in deps:
+            if dep in g and cfg.layer(dep) in cfg.adapter_dirs:
+                errors.append(
+                    _error(
+                        "AIF016",
+                        mod.replace(".", "/") + ".py",
+                        line,
+                        f"entry layer imports an adapter directly: {dep}",
+                        "depend on a port from ports/ and wire the adapter in a module listed in composition_roots",
+                    )
+                )
+    return errors
+
+
 def run(root: Path, cfg: Config) -> list[Error]:
     errors: list[Error] = []
     for file in source_files(root, cfg):
@@ -231,4 +252,4 @@ def run(root: Path, cfg: Config) -> list[Error]:
         for node in ast.walk(tree):
             if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
                 errors += _check_function(node, rel, cfg, aliases)
-    return errors + _layers(root, cfg)
+    return errors + _layers(root, cfg) + _entry_layering(root, cfg)

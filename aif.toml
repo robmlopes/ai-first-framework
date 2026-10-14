@@ -4,6 +4,12 @@ pure_dirs = ["domain"]            # no I/O, @contract required
 port_dirs = ["ports"]             # interfaces only
 max_file_lines = 200
 max_function_lines = 40
+count_code_lines = true           # AIF005 ignores blank lines, comments and docstrings
+limit_warn_ratio = 0.9            # warn (not fail) at 90% of a limit
+parallel = true                   # mypy, fuzz and pytest run concurrently
+history = true                    # append every check to .aif/history.jsonl (see `aif stats`)
+# entry_dirs = ["web"]            # web / CLI layers: may use domain+ports, adapters only via composition_roots
+# composition_roots = ["web.main"]
 intents = true                    # validate .aif/intents/*.md
 style = true                      # ruff format + ruff check
 typecheck = true                  # run mypy over source_dirs
@@ -12,8 +18,15 @@ fuzz = true                       # property-check every @contract(ensures=...) 
 fuzz_examples = 100
 fuzz_setup = "tests.strategies"    # module registering domain input strategies
 mypy_args = ["--strict"]
-forbidden_imports = ["builtins", "importlib", "os", "sys", "subprocess", "socket", "requests", "urllib", "http", "sqlite3", "pathlib", "shutil", "random", "datetime"]
+forbidden_imports = ["builtins", "importlib", "os", "sys", "subprocess", "socket", "requests", "urllib", "http", "sqlite3", "pathlib", "shutil", "random"]
 forbidden_calls = ["open", "print", "input", "exec", "eval", "compile", "__import__", "getattr", "setattr", "delattr", "globals", "locals", "vars"]
+
+# Reading the clock is banned in pure code (forbidden_clock); date/time *types* stay allowed.
+# Inject a Clock port instead of calling datetime.now() / time.time().
+
+# Per-layer size limits (override the global values):
+# [aif.limits.web]
+# max_function_lines = 60
 
 # Third-party packages (top-level import names) that source_dirs may import; must also be in pyproject.toml
 third_party = []

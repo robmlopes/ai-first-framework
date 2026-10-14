@@ -13,8 +13,11 @@ from aif.config import Config
 Error = dict[str, Any]
 
 
-def _targets(root: Path, cfg: Config) -> list[str]:
-    return [d for d in [*cfg.source_dirs, "tests"] if (root / d).is_dir()]
+def _targets(root: Path, cfg: Config, only: frozenset[str] | None = None) -> list[str]:
+    dirs = [d for d in [*cfg.source_dirs, "tests"] if (root / d).is_dir()]
+    if only is None:
+        return dirs
+    return sorted(f for f in only if f.endswith(".py") and f.split("/")[0] in dirs and (root / f).is_file())
 
 
 def _ruff(root: Path, *args: str) -> subprocess.CompletedProcess[str]:
@@ -35,10 +38,12 @@ def _unavailable(proc: subprocess.CompletedProcess[str]) -> list[Error]:
     ]
 
 
-def run(root: Path, cfg: Config) -> list[Error]:
+def run(root: Path, cfg: Config, only: frozenset[str] | None = None) -> list[Error]:
     if not cfg.style:
         return []
-    targets = _targets(root, cfg)
+    targets = _targets(root, cfg, only)
+    if not targets:
+        return []
     errors: list[Error] = []
     for name, args in (("format", ("format", "--check")), ("check", ("check",))):
         proc = _ruff(root, *args, "--output-format=json", *targets)

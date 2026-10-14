@@ -26,6 +26,7 @@ import typing
 from pathlib import Path
 from typing import Any
 
+from aif import cache
 from aif.bounds import infer as bounds_of
 from aif.config import Config
 from aif.index import module_of, source_files
@@ -51,14 +52,27 @@ def _error(rule: str, module: str, fn: Any, cause: str, suggestion: str, **extra
     }
 
 
-def run(root: Path, cfg: Config) -> list[Error]:
+def run(root: Path, cfg: Config, use_cache: bool = False) -> list[Error]:
+    """Fuzz every contract; with `use_cache`, modules whose inputs are unchanged since a passing run are skipped."""
     if not cfg.fuzz:
         return []
-    modules = [
-        module_of(root, f)
+    files = {
+        module_of(root, f): f
         for f in source_files(root, cfg)
         if f.name != "__init__.py" and f.relative_to(root).parts[0] not in cfg.port_dirs
-    ]
+    }
+    keys = cache.keys(root, cfg) if use_cache else {}
+    passed = cache.load(root) if use_cache else {}
+    modules = [m for m in files if not (use_cache and passed.get(m) == keys.get(m))]
+    errors = _run_worker(root, cfg, modules) if modules else []
+    if use_cache and not any(not e.get("file") for e in errors):
+        failing = {Path(e["file"]).resolve() for e in errors}
+        fresh = {m: keys[m] for m in modules if files[m].resolve() not in failing}
+        cache.save(root, {**{m: k for m, k in passed.items() if m in files}, **fresh})
+    return errors
+
+
+def _run_worker(root: Path, cfg: Config, modules: list[str]) -> list[Error]:
     framework_parent = str(Path(__file__).resolve().parent.parent)
     env = {**os.environ, "PYTHONPATH": f"{root}:{framework_parent}", "PYTHONDONTWRITEBYTECODE": "1"}
     payload = json.dumps(

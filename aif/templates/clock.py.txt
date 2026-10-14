@@ -1,0 +1,9 @@
+"""Clock port: pure code asks for the time here instead of calling datetime.now() or time.time()."""
+
+from typing import Protocol
+
+
+class Clock(Protocol):
+    def now_minute(self) -> int:
+        """Minutes since an epoch the adapter chooses (e.g. Unix minutes)."""
+        ...

@@ -1,6 +1,10 @@
 *.egg-info/
 *.pyc
 .aif/index.json
+.aif/cache/
+.aif/history.jsonl
+.aif/last-check.json
+.aif/last-check.tmp
 .hypothesis/
 .mypy_cache/
 .pytest_cache/

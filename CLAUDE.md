@@ -7,6 +7,7 @@
 3. Every task has an intent in `.aif/intents/` (`aif intent list` / `aif intent new ID TITLE`). End commit messages with `Intent: <id>`; staged files must be inside that intent's `Scope`.
 4. Work order: contract -> test (Hypothesis) -> implementation.
 5. Run `aif check --json` (ruff -> intents -> lint/effects -> mypy --strict -> contract fuzzing -> tests) and fix using `errors[].counterexample` and `suggestion`. A `fuzz` error means a contract failed for generated inputs: fix the code or the contract, never the generated input. If only style errors remain, run `aif fix`.
+   While iterating use `aif check --changed --json` (style and lint only on changed files); run the full `aif check --json` before you finish. If a command may exceed your tool timeout, run `aif check --background` and poll `aif status`. `warnings` in the output (AIF005 at 90% of a limit) are not failures: split before they become errors.
 6. At most 5 attempts per task; then stop and report what blocked you.
 7. Small changes: at most 1-2 modules per task.
 8. All code, comments, docs and identifiers are written in English.

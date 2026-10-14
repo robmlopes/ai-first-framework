@@ -11,18 +11,38 @@ aif <command> [--json] [--root PATH]      # same as: python -m aif ...
 | `intent new\|list\|commit-msg` | Manage and validate intents (see below) |
 | `agents` | Regenerates `AGENTS.md`, `CLAUDE.md` and `.cursor/rules/aif.mdc` from `.aif/protocol.md` |
 | `fix` | Applies canonical formatting and safe autofixes (ruff), returns what remains |
-| `check` | Index -> style (ruff) -> agent files -> intents -> lint/effects -> types (mypy) -> tests. Exit code 0 when ok, 1 otherwise |
+| `check` | Index -> style (ruff) -> agent files -> intents -> lint/effects -> types (mypy) / fuzz / tests (run concurrently). Exit code 0 when ok, 1 otherwise. Options: `--changed`, `--background` |
+| `status` | Prints `.aif/last-check.json`; exit 0 when the last check passed, 3 while one is running, 1 otherwise |
+| `stats` | Summarises `.aif/history.jsonl`: runs, attempts before ok, rules that fire most, time per stage |
 
 `--root` defaults to the current directory.
+
+## `aif check` options
+
+| Option | Effect |
+|---|---|
+| `--changed` | Style and lint look only at files that differ from `HEAD` (modified, staged, untracked). Types, fuzz and tests still cover everything, because a change can break a file it did not touch. Fuzz is cached per module, so unchanged modules are skipped in every mode. Outside a git repository it checks everything. |
+| `--background` | Starts the check detached and returns at once. Poll with `aif status`; the result is `.aif/last-check.json`. Use it when your tool has a timeout shorter than the pipeline. |
+
+Plain `aif check` also uses the fuzz cache and runs mypy, fuzz and pytest in parallel (`parallel = false` to disable). The cache key of a module covers its source, every project module it imports, the fuzz settings, the `fuzz_setup` module and the framework's fuzz code; a failing module is never cached. The cache lives in `.aif/cache/` (gitignored).
 
 ## JSON output (`check --json`)
 
 ```json
 {
   "ok": false,
-  "errors": [ ... ]
+  "errors": [ ... ],
+  "warnings": [ ... ],
+  "timings": {"index": 0.0, "style": 0.4, "lint": 0.3, "types": 6.1, "fuzz": 2.0, "tests": 3.2, "total": 6.3},
+  "changed_only": ["domain/x.py"]
 }
 ```
+
+`warnings` holds AIF005 entries (`"severity": "warning"`) for functions and files at 90% or more of their limit (`limit_warn_ratio`); they never fail the check. `timings` are seconds per stage; `types`, `fuzz` and `tests` overlap when `parallel = true`, so `total` is less than their sum. `changed_only` appears only with `--changed`.
+
+## Run history
+
+Every `aif check` appends one line to `.aif/history.jsonl` (gitignored; `history = false` disables it): outcome, which rules fired, timings. `aif stats` summarises it, including **attempts before ok** (failing runs between successes), which is the measure of how much feedback an agent needed.
 
 ### Lint / effects error
 

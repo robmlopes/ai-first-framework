@@ -21,7 +21,7 @@ def is_banned(full: str, cfg: Config) -> bool:
     short = full.removeprefix("builtins.")
     banned_builtin = short in cfg.forbidden_calls or (full != short and short.split(".")[0] in cfg.forbidden_calls)
     banned_module = "." in full and full.split(".")[0] in cfg.forbidden_imports
-    return banned_builtin or banned_module
+    return banned_builtin or banned_module or full in cfg.forbidden_clock
 
 
 def banned_references(

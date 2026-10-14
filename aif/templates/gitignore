@@ -7,5 +7,9 @@ __pycache__/
 .venv/
 *.egg-info/
 .aif/index.json
+.aif/cache/
+.aif/history.jsonl
+.aif/last-check.json
+.aif/last-check.tmp
 build/
 dist/

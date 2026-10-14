@@ -114,7 +114,18 @@ git commit -m "feat: discounted price
 Intent: discount"
 ```
 
-## 5. What `aif check` tells you
+## 5. Fast feedback while you work
+
+```bash
+aif check --changed --json     # style and lint only on changed files; fuzz is cached
+aif check --background         # returns at once; for tools with a short timeout
+aif status                     # result of the last check (exit 3 while running)
+aif stats                      # attempts before ok, most frequent rules, time per stage
+```
+
+Run the plain `aif check --json` before you finish: the hooks do.
+
+## 6. What `aif check` tells you
 
 Stages run in order and stop at the first one that fails, so each report is about one kind of problem:
 
@@ -123,14 +134,16 @@ Stages run in order and stop at the first one that fails, so each report is abou
 | `style` | `F401`, `format` | `aif fix` |
 | `agents` | `AGT001` | `aif agents` |
 | `intents` | `INT006` file outside scope | add the file to the intent's `Scope`, or split the commit |
-| `lint`, `effects` | `AIF010` `open()` in `domain/` | move the I/O behind a port in `ports/` |
+| `lint`, `effects` | `AIF010` `open()` or `datetime.now()` in `domain/` | move the I/O or the clock read behind a port in `ports/` |
+| `lint` | `AIF005` function too long | extract the block named in the `suggestion`; code lines only are counted |
+| `effects` | `AIF016` web code imports an adapter | take a port as a parameter; build the adapter in the composition root |
 | `types` | mypy error | fix the type or the signature |
 | `fuzz` | `CON001` with a `counterexample` | the contract failed for generated inputs: fix the code or the contract |
 | `tests` | contract violated | same, with the exact failing inputs |
 
 Every error has `rule`, `file`, `line`, `cause` and `suggestion`; see [lint-rules.md](lint-rules.md) for all rules.
 
-## 6. Effects: database, files, network
+## 7. Effects: database, files, network
 
 Pure code cannot touch the outside world. Declare the need as a port, ask for it by type, and list it in the contract:
 
@@ -162,11 +175,11 @@ def store(key: str, value: str, db: DbWrite) -> None:
 
 List every file the intent touches in its `Scope` (here also `domain/store.py` and `ports/db.py`). The implementation (SQLite, Postgres, an in-memory fake for tests) lives in `adapters/`. See the worked example in [architecture.md](architecture.md).
 
-## 7. Using an AI agent
+## 8. Using an AI agent
 
 Point your agent at the repository. It reads `AGENTS.md` (or `CLAUDE.md`, or the Cursor rule), which tells it to consult `.aif/index.json`, work contract first, run `aif check --json`, and stop after five failed attempts. The details are in [agent-protocol.md](agent-protocol.md). To change the rules, edit `.aif/protocol.md` and run `aif agents`.
 
-## 8. Third-party packages
+## 9. Third-party packages
 
 A package must be listed in `pyproject.toml` **and** in `third_party` in `aif.toml`, otherwise `aif check` reports `AIF014`:
 
@@ -175,7 +188,7 @@ A package must be listed in `pyproject.toml` **and** in `third_party` in `aif.to
 third_party = ["httpx"]
 ```
 
-## 9. Cloning an existing AIF project
+## 10. Cloning an existing AIF project
 
 Git does not version `.git/hooks`, so install them after cloning:
 

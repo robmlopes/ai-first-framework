@@ -4,84 +4,16 @@ from __future__ import annotations
 
 import argparse
 import json
-import re
 import subprocess
 import sys
-import tempfile
-import xml.etree.ElementTree as ET
+import time
 from pathlib import Path
 from typing import Any
 
-from aif import agents, fuzz, index, intents, lint, patch, scaffold, style, types
+from aif import agents, fuzz, history, index, intents, patch, pipeline, scaffold, style
 from aif.config import load
 
-_CONTRACT = re.compile(r"AIF_CONTRACT (\{.*\})")
-
-
-def _tests(root: Path) -> list[dict[str, Any]]:
-    if not (root / "tests").exists():
-        return []
-    with tempfile.TemporaryDirectory() as tmp:
-        xml = Path(tmp) / "r.xml"
-        proc = subprocess.run(
-            [sys.executable, "-m", "pytest", "-q", "-p", "no:cacheprovider", f"--junitxml={xml}"],
-            cwd=root,
-            capture_output=True,
-            text=True,
-        )
-        if not xml.exists():
-            return [{"stage": "tests", "cause": "pytest did not run", "detail": (proc.stdout + proc.stderr)[-800:]}]
-        errors: list[dict[str, Any]] = []
-        for case in ET.parse(xml).getroot().iter("testcase"):
-            failure = case.find("failure")
-            failure = failure if failure is not None else case.find("error")
-            if failure is None:
-                continue
-            text = (failure.get("message") or "") + "\n" + (failure.text or "")
-            found = _CONTRACT.search(text)
-            error: dict[str, Any] = {"stage": "tests", "test": f"{case.get('classname')}::{case.get('name')}"}
-            if found:
-                error["cause"] = "contract violated"
-                error.update(json.loads(found.group(1)))
-            else:
-                error["cause"] = (failure.get("message") or "failure")[:300]
-            errors.append(error)
-        return errors
-
-
-def _agent_files(root: Path) -> list[dict[str, Any]]:
-    if not (root / ".aif" / "protocol.md").is_file():
-        return []
-    return [
-        {
-            "stage": "agents",
-            "rule": "AGT001",
-            "file": name,
-            "line": 1,
-            "cause": "agent instruction file is out of date with .aif/protocol.md",
-            "suggestion": "run `aif agents`",
-        }
-        for name in agents.stale(root)
-    ]
-
-
-def check(root: Path) -> dict[str, Any]:
-    cfg = load(root)
-    index.save(root, cfg)
-    errors = style.run(root, cfg)
-    if not errors:
-        errors = _agent_files(root)
-    if not errors:
-        errors = intents.run(root, cfg)
-    if not errors:
-        errors = lint.run(root, cfg)
-    if not errors:
-        errors = types.run(root, cfg)
-    if not errors:
-        errors = fuzz.run(root, cfg)
-    if not errors:  # tests only run when lint, types and fuzzing pass
-        errors = _tests(root)
-    return {"ok": not errors, "errors": errors}
+check = pipeline.check
 
 
 def _staged_files(root: Path) -> list[str]:
@@ -111,9 +43,20 @@ def _intent(root: Path, action: str | None, arg: str | None, rest: list[str]) ->
     return 0 if out["ok"] else 1
 
 
+def _background(root: Path, changed: bool) -> int:
+    """Start `aif check --json` detached; results land in `.aif/last-check.json` (see `aif status`)."""
+    history.write_last(root, {"status": "running", "started": time.time()})
+    cmd = [sys.executable, "-m", "aif", "check", "--json", "--root", str(root), *(["--changed"] if changed else [])]
+    subprocess.Popen(cmd, cwd=root, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
+    print(json.dumps({"status": "running", "poll": "aif status", "result": ".aif/last-check.json"}))
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(prog="aif")
-    p.add_argument("command", choices=["check", "index", "patch", "fix", "intent", "agents", "fuzz", "init"])
+    p.add_argument(
+        "command", choices=["check", "index", "patch", "fix", "intent", "agents", "fuzz", "init", "status", "stats"]
+    )
     p.add_argument("file", nargs="?", help="patch: target file, e.g. domain/transfer.py; init: target directory")
     p.add_argument("symbol", nargs="?", help="patch: top-level function or class to replace")
     p.add_argument("rest", nargs="*", help="intent: extra words (title for `new`)")
@@ -121,6 +64,8 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--dry-run", action="store_true", help="patch: show the diff without writing")
     p.add_argument("--keep", action="store_true", help="patch: keep the change even if lint fails")
     p.add_argument("--no-git", action="store_true", help="init: do not run git init or install hooks")
+    p.add_argument("--changed", action="store_true", help="check: style and lint only files changed since HEAD")
+    p.add_argument("--background", action="store_true", help="check: start detached, poll with `aif status`")
     p.add_argument("--json", action="store_true")
     p.add_argument("--root", default=".")
     a = p.parse_args(argv)
@@ -129,6 +74,13 @@ def main(argv: list[str] | None = None) -> int:
         out = scaffold.init(Path(a.file or a.root).resolve(), git=not a.no_git)
         print(json.dumps(out, indent=2, ensure_ascii=False))
         return 0 if out["ok"] else 1
+    if a.command == "status":
+        out = history.read_last(root)
+        print(json.dumps(out, indent=2, ensure_ascii=False, default=repr))
+        return 0 if out.get("status") == "done" and out.get("ok") else (3 if out.get("status") == "running" else 1)
+    if a.command == "stats":
+        print(json.dumps(history.stats(root), indent=2, ensure_ascii=False))
+        return 0
     if a.command == "fuzz":
         errors = fuzz.run(root, load(root))
         print(json.dumps({"ok": not errors, "errors": errors}, indent=2, ensure_ascii=False, default=repr))
@@ -154,11 +106,15 @@ def main(argv: list[str] | None = None) -> int:
         out = patch.apply(root, load(root), a.file, a.symbol, new, a.dry_run, a.keep)
         print(json.dumps(out, indent=2, ensure_ascii=False, default=repr))
         return 0 if out["ok"] else 1
-    r = check(root)
+    if a.background:
+        return _background(root, a.changed)
+    r = check(root, a.changed)
     if a.json:
         print(json.dumps(r, indent=2, ensure_ascii=False, default=repr))
     else:
-        print("OK" if r["ok"] else f"{len(r['errors'])} error(s)")
+        print("OK" if r["ok"] else f"{len(r['errors'])} error(s)", f"({r['timings']['total']}s)")
         for e in r["errors"]:
             print(" -", e.get("rule", e["stage"]), e.get("file", e.get("test", "")), e["cause"])
+        for w in r["warnings"]:
+            print(" ~", w["rule"], w["file"], w["cause"])
     return 0 if r["ok"] else 1

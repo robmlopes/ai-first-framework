@@ -30,7 +30,8 @@ def test_init_config_loads_and_matches_defaults(tmp_path: Path) -> None:
 
 def test_new_project_passes_check(tmp_path: Path) -> None:
     scaffold.init(tmp_path, git=False)
-    assert cli.check(tmp_path) == {"ok": True, "errors": []}
+    result = cli.check(tmp_path)
+    assert result["ok"] and result["errors"] == []
 
 
 def test_init_refuses_existing_project(tmp_path: Path) -> None:
@@ -83,3 +84,14 @@ def test_cli_init_existing_returns_error(tmp_path: Path, capsys: pytest.CaptureF
     scaffold.init(tmp_path, git=False)
     assert cli.main(["init", str(tmp_path), "--no-git"]) == 1
     assert json.loads(capsys.readouterr().out)["ok"] is False
+
+
+def test_new_project_has_clock_port_and_rejects_clock_reads(tmp_path: Path) -> None:
+    scaffold.init(tmp_path, git=False)
+    assert "class Clock" in (tmp_path / "ports/clock.py").read_text()
+    (tmp_path / "domain/m.py").write_text(
+        "import time\n\nfrom aif import contract\n\n\n"
+        "@contract(effects=[])\ndef t() -> float:\n    return time.time()\n"
+    )
+    errors = cli.check(tmp_path)["errors"]
+    assert errors and errors[0]["rule"] == "AIF010"

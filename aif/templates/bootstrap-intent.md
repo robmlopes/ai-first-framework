@@ -5,6 +5,7 @@ Create the AIF project structure so that later features start from a verified ba
 
 ## Scope
 - aif.toml
+- ports/clock.py
 - scripts/pre-commit
 - scripts/commit-msg
 - .cursor/rules/aif.mdc

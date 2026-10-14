@@ -6,7 +6,7 @@ import ast
 from pathlib import Path
 from typing import Any
 
-from aif import effects, members, thirdparty
+from aif import effects, limits, members, thirdparty
 from aif.config import Config
 from aif.index import generate, module_of, resolve_from, source_files
 from aif.model import Model
@@ -23,20 +23,9 @@ def _has_contract(node: ast.FunctionDef | ast.AsyncFunctionDef) -> bool:
 
 
 def _check_function(
-    node: ast.FunctionDef | ast.AsyncFunctionDef, file: str, cfg: Config, pure: bool, top_level: bool
+    node: ast.FunctionDef | ast.AsyncFunctionDef, file: str, pure: bool, top_level: bool
 ) -> list[Error]:
     errors: list[Error] = []
-    size = (node.end_lineno or node.lineno) - node.lineno + 1
-    if size > cfg.max_function_lines:
-        errors.append(
-            _error(
-                "AIF005",
-                file,
-                node.lineno,
-                f"{node.name} has {size} lines (max {cfg.max_function_lines})",
-                "split into smaller functions",
-            )
-        )
     args = [a for a in node.args.args + node.args.kwonlyargs if a.arg not in ("self", "cls")]
     if any(a.annotation is None for a in args) or node.returns is None:
         errors.append(
@@ -120,15 +109,13 @@ def _check_file(
     tree = ast.parse(text)
     pure = cfg.layer(rel) in cfg.pure_dirs
     errors: list[Error] = []
-    n = len(text.splitlines())
-    if n > cfg.max_file_lines:
-        errors.append(_error("AIF005", rel, 1, f"file has {n} lines (max {cfg.max_file_lines})", "split the module"))
+    errors += limits.check_file(tree, text, rel, cfg)[0]
     errors += thirdparty.check(tree, rel, res)
     errors += members.check_module(model, module_of(root, file), rel, tree)
     top = {id(f) for f in tree.body}
     for node in ast.walk(tree):
         if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
-            errors += _check_function(node, rel, cfg, pure, id(node) in top)
+            errors += _check_function(node, rel, pure, id(node) in top)
         elif isinstance(node, ast.Global):
             errors.append(_error("AIF007", rel, node.lineno, "use of 'global'", "pass state as a parameter"))
         elif isinstance(node, ast.ExceptHandler):
@@ -139,11 +126,13 @@ def _check_file(
     return errors
 
 
-def run(root: Path, cfg: Config) -> list[Error]:
+def run(root: Path, cfg: Config, only: frozenset[str] | None = None) -> list[Error]:
     index = generate(root, cfg)
     model = Model(root, cfg)
     res = thirdparty.Resolver(root, cfg)
     errors: list[Error] = []
     for file in source_files(root, cfg):
+        if only is not None and file.relative_to(root).as_posix() not in only:
+            continue
         errors += _check_file(root, file, cfg, index, model, res)
     return errors + effects.run(root, cfg)

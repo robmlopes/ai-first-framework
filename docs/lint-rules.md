@@ -8,7 +8,7 @@ Every error is a dict: `{"stage", "rule", "file", "line", "cause", "suggestion"}
 | AIF002 | lint | `pure_dirs` | Public top-level function without `@contract` | Add `@contract(...)` |
 | AIF003 | lint | all | Missing parameter or return type hints | Annotate everything |
 | AIF004 | lint | all | Bare `except:` or `except Exception` | Catch a specific error |
-| AIF005 | lint | all | File longer than `max_file_lines` or function longer than `max_function_lines` | Split |
+| AIF005 | lint | all | File longer than `max_file_lines` or function longer than `max_function_lines`. Counts code lines only (not blanks, comments or docstrings) unless `count_code_lines = false`; limits can be overridden per layer in `[aif.limits.<layer>]`. The error names the largest blocks to extract; at 90% of a limit a non-failing warning appears in `warnings` | Extract the suggested block |
 | AIF006 | lint | all | `from x import y` (absolute or relative) or `import x.y` of a project module/symbol not present in the index; relative imports that climb past the root | Use a name from the suggestion list |
 | AIF007 | lint | all | Use of `global` | Pass state as a parameter |
 | AIF008 | effects | contracts | Declared effect not defined in `[aif.capabilities]` | Use a valid effect |
@@ -16,6 +16,7 @@ Every error is a dict: `{"stage", "rule", "file", "line", "cause", "suggestion"}
 | AIF010 | effects | `pure_dirs` | Direct call or **reference** (`f = open`, `map(os.path.abspath, xs)`) of a name in `forbidden_calls` (`open`, `getattr`...), including `builtins.open()`, aliases (`reader = open`) and calls into forbidden modules (`os.getcwd()`, `from os import getcwd as g`) | Use an injected port |
 | AIF013 | effects | `pure_dirs` | Dynamic dispatch: call through a name bound at runtime (`fn = pick(); fn()`), a subscript (`table[k]()`), a call result (`make()()`) or a loop variable | Call a named function or inject the behaviour as a port |
 | AIF014 | lint | all | Import of a top-level package that is not stdlib, project, the framework or declared in `third_party`; or declared but not installed | Declare it in `pyproject.toml` and `third_party`, or install it |
+| AIF016 | effects | `entry_dirs` | An entry layer (web, CLI) imports from an adapter layer directly | Depend on a port; wire the adapter in a module listed in `composition_roots` |
 | AIF015 | lint | all | `import pkg.sub` / `from pkg import name` names a module or symbol the installed package or stdlib module does not define (with "did you mean") | Use a suggested name |
 | AIF011 | effects | `pure_dirs` | Domain imports an effects layer, or reaches I/O through a port module | Invert the dependency |
 | AIF012 | lint | all | Unknown member on a project class (`Cls.x`) or on an instance whose class is inferred (`obj.x`): see below | Use a name from the suggestion list |
