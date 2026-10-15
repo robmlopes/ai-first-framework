@@ -18,7 +18,7 @@ from aif import agents, docscheck, fuzz, history, index, intents, limits, lint, 
 from aif.config import Config, load
 
 Error = dict[str, Any]
-COMMANDS = ["check", "index", "patch", "fix", "intent", "agents", "fuzz", "init", "status", "stats", "docs"]
+COMMANDS = ["check", "index", "patch", "fix", "intent", "agents", "fuzz", "init", "status", "stats", "docs", "upgrade"]
 _CONTRACT = re.compile(r"AIF_CONTRACT (\{.*\})")
 
 

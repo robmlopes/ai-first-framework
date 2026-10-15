@@ -157,6 +157,28 @@ Intents live in `.aif/intents/<id>.md` (kebab-case id). Required format:
 
 Intent errors use `"stage": "intents"`. `aif check` validates all intents (INT001-INT003); INT004-INT006 apply to commit messages via `scripts/commit-msg`, which you install as a git `commit-msg` hook.
 
+## `aif upgrade`
+
+Brings a project up to date after you install a newer AIF. Without `--apply` it only reports; nothing is written.
+
+```
+aif upgrade            # what is out of date
+aif upgrade --apply    # update it
+```
+
+| Updated by `--apply` | How |
+|---|---|
+| `.aif/protocol.md`, `AGENTS.md`, `CLAUDE.md`, `.cursor/rules/aif.mdc` | replaced with the current versions |
+| git hooks | reinstalled when they differ |
+| `.gitignore` | missing AIF entries are appended; your lines stay |
+| `aif.toml` | options the current template defines and you do not set are added with their defaults under a `# added by aif upgrade` comment; **your values are never changed** |
+
+`manual` lists what needs your decision and is never edited, for example a `forbidden_imports` that still bans `datetime`. Run `aif check --json` afterwards.
+
+## Project environment
+
+`check`, `fix`, `fuzz`, `index` and `patch` run project code and tools, so they need the project's dependencies. When the project has a `.venv` (or `venv`) and `aif` was started from another interpreter (pipx, system Python), `aif` re-runs itself with the project's interpreter automatically. Without that, AIF014 would report every declared package as "not installed". If no project environment exists, the hint on the error names the interpreter that was used.
+
 ## `aif docs`
 
 Verifies the documentation by machine, so "are the docs up to date?" has a checkable answer. It also runs as a stage of `aif check` when `docs_check = true` (off by default: the rules compare `docs/` against the AIF framework, so only the AIF repository enables it). Silent for projects without a `docs/` directory.

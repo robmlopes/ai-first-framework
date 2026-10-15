@@ -204,6 +204,7 @@ aif check --json
 
 | Symptom | Cause | Fix |
 |---|---|---|
+| AIF014 `declared but not installed` for packages you did install | `aif` ran under another interpreter than the project's | create `.venv` in the project root (aif then uses it), or run `.venv/bin/python -m aif check` |
 | `mypy did not run` | mypy not installed in the active environment | `pip install -e ".[dev]"` |
 | `Untyped decorator` / `import-untyped` for `aif` | an old install without `py.typed` | reinstall the framework from GitHub |
 | `CON004` on a contract | `requires` rejects almost every generated input | use simple numeric bounds, or pass `strategies=` to `@contract` |

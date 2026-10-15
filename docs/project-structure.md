@@ -38,6 +38,8 @@ project/
 │   ├── history.py            # .aif/history.jsonl, last-check.json, `aif stats`
 │   ├── docscheck.py          # `aif docs`: docs agree with code (DOC001-DOC004)
 │   ├── fuzzreport.py         # `aif fuzz --report`: tested vs skipped contracts
+│   ├── env.py                # re-run under the project's .venv
+│   ├── upgrade.py            # `aif upgrade`: update protocol, hooks, .gitignore, new options
 │   ├── effects.py            # rules AIF008-AIF011
 │   └── patch.py              # `aif patch`: replace one function/class with rollback
 ├── domain/                   # pure logic

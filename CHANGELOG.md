@@ -2,6 +2,11 @@
 
 Versions below 1.0.0 may change rules, `aif.toml` keys and JSON formats without notice.
 
+## 0.1.1
+
+- `aif` re-runs itself under the project's `.venv`, so declared packages that are installed there are no longer reported as "not installed" (AIF014) when `aif` was started from pipx or the system Python. The error now names the interpreter in use.
+- New `aif upgrade` (report) and `aif upgrade --apply`: updates the protocol, agent files, hooks and `.gitignore`, adds new `aif.toml` options with defaults, and lists stale values for manual review (for example `datetime` in `forbidden_imports`).
+
 ## 0.1.0
 
 First tagged version.

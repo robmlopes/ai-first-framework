@@ -16,6 +16,7 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
+from aif import env
 from aif.config import Config
 
 Error = dict[str, Any]
@@ -270,7 +271,15 @@ def _check_module(module: str, line: int, rel: str, res: Resolver, wanted: list[
     if not res.exists(top):
         if kind == "stdlib":
             return []  # platform-specific stdlib module (msvcrt, _winapi, ...): not importable here, not an error
-        return [_error("AIF014", rel, line, f"package '{top}' is declared but not installed", f"pip install {top}")]
+        return [
+            _error(
+                "AIF014",
+                rel,
+                line,
+                f"package '{top}' is declared but not installed",
+                f"pip install {top}." + env.hint(res.root),
+            )
+        ]
     return _check_symbols(module, line, rel, res, wanted)
 
 

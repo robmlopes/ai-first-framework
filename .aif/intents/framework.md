@@ -25,6 +25,7 @@ The framework itself (CLI, lint rules, hooks, CI, packaging) evolves under its o
 - aif/docscheck.py
 - aif/dynamic.py
 - aif/effects.py
+- aif/env.py
 - aif/fuzz.py
 - aif/fuzzreport.py
 - aif/history.py
@@ -56,6 +57,7 @@ The framework itself (CLI, lint rules, hooks, CI, packaging) evolves under its o
 - aif/templates/strategies.py.txt
 - aif/thirdparty.py
 - aif/types.py
+- aif/upgrade.py
 - pyproject.toml
 - scripts/commit-msg
 - scripts/install-hooks.sh
