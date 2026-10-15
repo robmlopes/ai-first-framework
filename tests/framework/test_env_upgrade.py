@@ -131,3 +131,21 @@ def test_upgrade_command(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> 
     assert json.loads(capsys.readouterr().out)["up_to_date"] is False
     assert cli.main(["upgrade", "--apply", "--root", str(root)]) == 0
     assert json.loads(capsys.readouterr().out)["applied"] is True
+
+
+def test_upgrade_keeps_the_projects_own_protocol_sections(tmp_path: Path) -> None:
+    root = old_project(tmp_path)
+    own = "## Team rules\n\n11. Never swallow errors.\n12. Use the harness.\n"
+    (root / ".aif" / "protocol.md").write_text("1. old rule\n\n" + own)
+    assert upgrade.run(root)["changes"]["protocol"] is True
+    upgrade.run(root, apply=True)
+    text = (root / ".aif" / "protocol.md").read_text()
+    assert text.startswith(scaffold.template("protocol.md").rstrip("\n")) and text.endswith(own)
+    assert "1. old rule" not in text
+    assert agents_in_sync(root) and upgrade.run(root)["up_to_date"]
+
+
+def agents_in_sync(root: Path) -> bool:
+    from aif import agents
+
+    return agents.stale(root) == []

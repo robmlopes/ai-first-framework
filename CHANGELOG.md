@@ -2,6 +2,10 @@
 
 Versions below 1.0.0 may change rules, `aif.toml` keys and JSON formats without notice.
 
+## 0.1.2
+
+- `aif upgrade --apply` no longer discards your own `## ` sections in `.aif/protocol.md` (for example project rules 11-15): it replaces only the framework's numbered rules and appends your sections after them.
+
 ## 0.1.1
 
 - `aif` re-runs itself under the project's `.venv`, so declared packages that are installed there are no longer reported as "not installed" (AIF014) when `aif` was started from pipx or the system Python. The error now names the interpreter in use.

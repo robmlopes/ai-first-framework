@@ -1,7 +1,8 @@
 """`aif upgrade`: bring a project's AIF-owned files up to date with the installed framework.
 
-Framework-owned files are replaced (protocol, agent files, hooks, .gitignore entries). Your `aif.toml` is yours: new
-options are added with their defaults, and anything that needs a decision is only reported under `manual`.
+Framework-owned files are replaced: the numbered protocol rules, the agent files, the hooks and the `.gitignore`
+entries. Yours are kept: any `## ` section you added to `.aif/protocol.md`, and `aif.toml`, to which only new options
+are added with their defaults. Anything that needs a decision is only reported under `manual`.
 """
 
 from __future__ import annotations
@@ -56,9 +57,24 @@ def _gitignore_missing(root: Path) -> list[str]:
     return [ln for ln in wanted if ln not in have]
 
 
+def _split_protocol(text: str) -> tuple[str, str]:
+    """(framework part, project sections): everything from the first `## ` heading on belongs to the project."""
+    match = re.search(r"^## ", text, flags=re.M)
+    return (text[: match.start()], text[match.start() :]) if match else (text, "")
+
+
+def _merged_protocol(root: Path) -> str:
+    """The current framework protocol followed by the project's own `## ` sections, which are never discarded."""
+    path = root / ".aif" / "protocol.md"
+    current = path.read_text(encoding="utf-8") if path.is_file() else ""
+    _, own = _split_protocol(current)
+    base = scaffold.template("protocol.md")
+    return base.rstrip("\n") + "\n\n" + own if own else base
+
+
 def _protocol_stale(root: Path) -> bool:
     path = root / ".aif" / "protocol.md"
-    return not path.is_file() or path.read_text(encoding="utf-8") != scaffold.template("protocol.md")
+    return not path.is_file() or path.read_text(encoding="utf-8") != _merged_protocol(root)
 
 
 def _hooks_stale(root: Path) -> list[str]:
@@ -108,7 +124,7 @@ def _apply(root: Path, plan: dict[str, Any]) -> None:
     if plan["protocol"]:
         target = root / ".aif" / "protocol.md"
         target.parent.mkdir(parents=True, exist_ok=True)
-        target.write_text(scaffold.template("protocol.md"), encoding="utf-8")
+        target.write_text(_merged_protocol(root), encoding="utf-8")
     if plan["config_added"]:
         _add_options(root, plan["config_added"])
     if plan["gitignore"]:

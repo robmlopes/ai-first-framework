@@ -168,7 +168,8 @@ aif upgrade --apply    # update it
 
 | Updated by `--apply` | How |
 |---|---|
-| `.aif/protocol.md`, `AGENTS.md`, `CLAUDE.md`, `.cursor/rules/aif.mdc` | replaced with the current versions |
+| `.aif/protocol.md` | the framework's numbered rules are replaced; **your own `## ` sections are kept** and appended after them |
+| `AGENTS.md`, `CLAUDE.md`, `.cursor/rules/aif.mdc` | regenerated from the protocol |
 | git hooks | reinstalled when they differ |
 | `.gitignore` | missing AIF entries are appended; your lines stay |
 | `aif.toml` | options the current template defines and you do not set are added with their defaults under a `# added by aif upgrade` comment; **your values are never changed** |
