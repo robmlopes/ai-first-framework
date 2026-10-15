@@ -159,7 +159,7 @@ Intent errors use `"stage": "intents"`. `aif check` validates all intents (INT00
 
 ## `aif docs`
 
-Verifies the documentation by machine, so "are the docs up to date?" has a checkable answer. It also runs as a stage of `aif check` (`docs_check = false` disables it). Silent for projects without a `docs/` directory.
+Verifies the documentation by machine, so "are the docs up to date?" has a checkable answer. It also runs as a stage of `aif check` when `docs_check = true` (off by default: the rules compare `docs/` against the AIF framework, so only the AIF repository enables it). Silent for projects without a `docs/` directory.
 
 | Rule | Fails when |
 |---|---|

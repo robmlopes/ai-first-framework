@@ -9,6 +9,7 @@ The framework itself (CLI, lint rules, hooks, CI, packaging) evolves under its o
 - .github/workflows/aif.yml
 - .gitignore
 - AGENTS.md
+- CHANGELOG.md
 - CLAUDE.md
 - LICENSE
 - README.md

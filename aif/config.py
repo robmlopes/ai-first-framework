@@ -18,7 +18,7 @@ class Config:
     adapter_dirs: list[str] = field(default_factory=lambda: ["adapters"])
     composition_roots: list[str] = field(default_factory=list)  # modules allowed to import adapters from entry_dirs
     parallel: bool = True  # run mypy, fuzz and pytest concurrently
-    docs_check: bool = True  # `aif check` also verifies that docs/ agrees with the code (DOC001-DOC004)
+    docs_check: bool = False  # opt-in: verify that docs/ agrees with the framework itself (DOC001-DOC004)
     history: bool = True  # append every `aif check` to .aif/history.jsonl
     intents: bool = True
     style: bool = True

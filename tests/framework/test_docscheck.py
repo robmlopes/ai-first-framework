@@ -88,14 +88,14 @@ def test_external_links_and_code_blocks_are_ignored(project: Project) -> None:
     assert docscheck.check_links(project.root) == []
 
 
-def test_pipeline_stage_reports_docs_errors_and_can_be_disabled(project: Project) -> None:
+def test_docs_stage_is_off_by_default_and_opt_in(project: Project) -> None:
     write_docs(project, extra={"a.md": "[x](missing.md)"})
+    assert pipeline.check(project.root)["ok"]
+    project.write(
+        "aif.toml", project.root.joinpath("aif.toml").read_text().replace("[aif]\n", "[aif]\ndocs_check = true\n", 1)
+    )
     out = pipeline.check(project.root)
     assert not out["ok"] and out["errors"][0]["stage"] == "docs"
-    project.write(
-        "aif.toml", project.root.joinpath("aif.toml").read_text().replace("[aif]\n", "[aif]\ndocs_check = false\n", 1)
-    )
-    assert pipeline.check(project.root)["ok"]
 
 
 def test_docs_command(project: Project, capsys: pytest.CaptureFixture[str]) -> None:

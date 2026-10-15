@@ -1,4 +1,5 @@
 [aif]
+docs_check = true
 source_dirs = ["domain", "ports", "adapters"]
 pure_dirs = ["domain"]            # no I/O, @contract required
 port_dirs = ["ports"]             # interfaces only
